@@ -1,0 +1,126 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { and, eq } from "drizzle-orm";
+import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock, Mail, Sparkles } from "lucide-react";
+import { checkEligibility, explainFit } from "@iq/core";
+import { savedProjects, studentProfiles, user } from "@iq/db";
+import { toggleSave } from "@/app/explore/actions";
+import { BriefView } from "@/components/brief-view";
+import { availability } from "@/components/project-card";
+import { Alert, Button, Page, messages } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSession } from "@/server/auth";
+import { getRoles } from "@/server/authz";
+import { getDb } from "@/server/db";
+import { coordinatorEmail } from "@/server/demo";
+import { seatsTaken, skillNames, studentTiers } from "@/server/discovery";
+import { loadProject } from "@/server/projects";
+
+const TIER_NAME = { emerging: "Emerging", bronze: "Bronze", none: "no evidence yet" } as const;
+
+export default async function ProjectPage({ params, searchParams }: PageProps<"/projects/[id]">) {
+  const { id } = await params;
+  const { error, info } = await messages(searchParams);
+  const db = getDb();
+  const row = await loadProject(db, id).catch(() => null);
+  if (!row) notFound();
+  const { project, brief, org } = row;
+  const session = await getSession();
+  const roles = session ? await getRoles(db, session.user.id) : null;
+  const insider = !!roles && (roles.isStaff || roles.ownerOf.includes(project.orgId));
+  // Drafts and briefs in review are private to the company and staff (ACC-08 covers public briefs only).
+  if (!["published", "paused", "closed"].includes(project.state) && !insider) notFound();
+
+  const b = brief.content;
+  const names = await skillNames(db);
+  const [mentor] = brief.mentorId ? await db.select({ name: user.name }).from(user).where(eq(user.id, brief.mentorId)) : [];
+  const open = Math.max(0, brief.capacity - ((await seatsTaken(db, [id])).get(id) ?? 0));
+  const avail = availability(project.state, open, brief.capacity);
+
+  const [profile] = session ? await db.select().from(studentProfiles).where(eq(studentProfiles.userId, session.user.id)) : [];
+  const tiers = profile ? await studentTiers(db, session!.user.id) : {};
+  const elig = checkEligibility(b.prerequisites, tiers);
+  const fit = profile && explainFit(
+    { interests: profile.interests, weeklyHours: profile.weeklyHours, tiers },
+    { text: `${b.title} ${b.summary}`, skills: b.skillIds.map((s) => ({ id: s, name: names[s] ?? s })), effortHours: b.effortHours, beginner: b.beginner, prerequisites: b.prerequisites },
+  );
+  const [saved] = profile ? await db.select().from(savedProjects).where(and(eq(savedProjects.userId, session!.user.id), eq(savedProjects.projectId, id))) : [];
+
+  return (
+    <Page title={b.title} description={org.name} back={{ href: "/explore", label: "Explore projects" }}
+      actions={insider && project.state !== "published" ? <Badge variant="secondary">Preview: {project.state.replace("_", " ")}</Badge> : undefined}>
+      <div className="mb-4 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+        <div className="order-2 lg:order-1">
+          <p className="mb-6 text-lg text-muted-foreground">{b.summary}</p>
+          <BriefView b={b} orgName={org.name} mentorName={mentor?.name} skillNames={names} restricted />
+        </div>
+
+        <aside className="order-1 grid h-fit gap-4 lg:sticky lg:top-20 lg:order-2" aria-label="Availability and eligibility">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                {avail.tone === "default" ? <CircleCheck className="size-5 text-green-600" /> : <Lock className="size-5 text-muted-foreground" />}
+                {avail.label}
+              </CardTitle>
+              <CardDescription>
+                {project.state === "published" ? `Apply by ${b.applyDeadline} (UTC). Applying needs a short note, never unpaid trial work.`
+                  : project.state === "paused" ? "The company paused new applications. Save it to find it again when it reopens."
+                  : "This project no longer takes applications. Students already in it keep going."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-2">
+              {!session && <Button asChild><Link href="/sign-in">Sign in to apply</Link></Button>}
+              {profile && (
+                <form action={toggleSave}>
+                  <input type="hidden" name="projectId" value={id} />
+                  <input type="hidden" name="back" value={`/projects/${id}`} />
+                  <Button variant="outline" className="w-full" aria-pressed={!!saved}>
+                    {saved ? <><BookmarkCheck className="text-primary" /> Saved</> : <><Bookmark /> Save for later</>}
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+
+          {profile && (
+            <Card className={elig.eligible ? undefined : "border-amber-500/50"}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  {elig.eligible ? <><CircleCheck className="size-5 text-green-600" /> You meet the requirements</> : <><Lock className="size-5 text-amber-600" /> Not unlocked yet</>}
+                </CardTitle>
+                <CardDescription>Eligibility depends on reviewed skill evidence only. XP and level never count.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 text-sm">
+                {elig.missing.map((m) => (
+                  <div key={m.skillId} className="grid gap-2 rounded-lg border p-3">
+                    <p>
+                      Needs <strong>{TIER_NAME[m.minTier]}</strong> in {names[m.skillId]}. You have {TIER_NAME[m.have]}.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/explore?skill=${m.skillId}&beginner=on`}><Compass /> Projects that build it</Link>
+                      </Button>
+                      <Button asChild size="sm" variant="ghost">
+                        <a href={`mailto:${coordinatorEmail()}?subject=${encodeURIComponent(`Equivalency review: ${names[m.skillId]}`)}`}><Mail /> Ask for an equivalency review</a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {fit && fit.reasons.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 font-medium">Why it could suit you</p>
+                    <ul className="grid gap-1.5 text-muted-foreground">
+                      {fit.reasons.map((r) => <li key={r} className="flex items-start gap-1.5"><Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />{r}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </aside>
+      </div>
+    </Page>
+  );
+}

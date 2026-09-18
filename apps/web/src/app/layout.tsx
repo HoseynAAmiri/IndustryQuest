@@ -1,21 +1,33 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Nav } from "@/components/nav";
+import { AppShell } from "@/components/app-shell";
+import { PublicHeader } from "@/components/public-header";
+import { ThemeProvider } from "@/components/theme";
+import { getSession } from "@/server/auth";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "IndustryQuest",
+  title: { default: "IndustryQuest", template: "%s · IndustryQuest" },
   description: "Real projects. Real mentors. Proven skills.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const session = await getSession();
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-muted/40 font-sans text-foreground antialiased">
-        <Nav />
-        {children}
+        <ThemeProvider>
+          {session ? (
+            <AppShell user={session.user}>{children}</AppShell>
+          ) : (
+            <>
+              <PublicHeader />
+              <main id="main">{children}</main>
+            </>
+          )}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import {
-  canPublish, checkEligibility, evaluate, levelFromXp, nextEnrollment, nextListing, progress,
+  canPublish, checkEligibility, evaluate, explainFit, levelFromXp, nextEnrollment, nextListing, progress,
   skillScores, tierFor, xpForLevel, type Brief, type Criterion,
 } from "./index.ts";
 
@@ -71,4 +71,20 @@ test("publishing is blocked without mentor, rubric or compensation (AC-02)", () 
     "Publish an assessment rubric.",
   ]);
   expect(canPublish({ ...empty, mentorId: "m1", compensation: "unpaid", rubric }, { verified: true })).toEqual([]);
+});
+
+test("fit explains itself in words and puts ineligible projects last", () => {
+  const student = { interests: ["Python", "vibration"], weeklyHours: 6, tiers: {} };
+  const p = {
+    text: "Find the dominant frequencies in pump vibration data", skills: [{ id: "sig", name: "Signal analysis" }],
+    effortHours: 5, beginner: true, prerequisites: [],
+  };
+  expect(explainFit(student, p).reasons).toEqual([
+    "Matches your interest in vibration",
+    "About 1 week at your 6 hours a week",
+    "Adds evidence for Signal analysis",
+    "Open to students with no verified work yet",
+  ]);
+  const locked = explainFit(student, { ...p, prerequisites: [{ skillId: "sig", minTier: "emerging" as const }] });
+  expect(locked).toMatchObject({ eligible: false, score: -1 });
 });

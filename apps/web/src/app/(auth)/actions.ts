@@ -2,7 +2,9 @@
 import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { DEMO_PASSWORD, DEMO_PERSONAS } from "@iq/db";
 import { getAuth } from "@/server/auth";
+import { isDemo } from "@/server/demo";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (path: string, error: string) => redirect(`${path}?error=${encodeURIComponent(error)}`);
@@ -54,4 +56,15 @@ export async function resetPassword(form: FormData) {
   const err = await attempt(() => getAuth().api.resetPassword({ body: { token, newPassword: String(form.get("password")) } }));
   if (err) redirect(`/reset?token=${encodeURIComponent(token)}&error=${encodeURIComponent(err)}`);
   redirect(`/sign-in?info=${encodeURIComponent("Password changed. Sign in with your new password.")}`);
+}
+
+// Demo mode only: one-click sign-in as a seeded fictional persona. Refuses any other email.
+export async function demoSignIn(form: FormData) {
+  const email = str(form, "email");
+  if (!isDemo() || !DEMO_PERSONAS.some((p) => p.email === email)) back("/sign-in", "Demo sign-in is turned off.");
+  const err = await attempt(async () =>
+    getAuth().api.signInEmail({ body: { email, password: DEMO_PASSWORD }, headers: await headers() }),
+  );
+  if (err) back("/sign-in", `${err}. Run pnpm db:seed to create the demo accounts.`);
+  redirect("/");
 }

@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const COMP = { paid: "Paid", stipend: "Stipend", unpaid: "Unpaid", course: "Course-associated", "": "Not stated" } as const;
+export const COMP = { paid: "Paid", stipend: "Stipend", unpaid: "Unpaid", course: "Course-associated", "": "Not stated" } as const;
 const TIER = (b: Brief) => (b.tier === "Q1" ? "Q1 Starter" : "Q2 Foundation");
 
 // Everything a student needs to judge a project before applying (PRD §4.1 step 3, §9.1).
-export function BriefView({ b, mentorName, orgName, skillNames }: {
-  b: Brief; mentorName?: string | null; orgName: string; skillNames: Record<string, string>;
+// restricted: hide material the company shares only with enrolled students (PRJ-09).
+export function BriefView({ b, mentorName, orgName, skillNames, restricted = false }: {
+  b: Brief; mentorName?: string | null; orgName: string; skillNames: Record<string, string>; restricted?: boolean;
 }) {
   const skill = (id?: string) => (id ? skillNames[id] ?? id : null);
   return (
@@ -83,7 +84,13 @@ export function BriefView({ b, mentorName, orgName, skillNames }: {
       </Section>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {b.resources && <Section title="Resources"><p className="whitespace-pre-line">{b.resources}</p></Section>}
+        {b.resources && (
+          <Section title="Resources">
+            {restricted
+              ? <p className="text-muted-foreground">Data and starter material are shared once you're enrolled.</p>
+              : <p className="whitespace-pre-line">{b.resources}</p>}
+          </Section>
+        )}
         <Section title="Terms"><p className="whitespace-pre-line">{b.terms}</p></Section>
       </div>
       <p className="text-sm text-muted-foreground">Backup contact if your mentor is unavailable: {b.backupContact}</p>

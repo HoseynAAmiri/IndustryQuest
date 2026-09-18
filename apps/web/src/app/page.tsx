@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, BadgeCheck, Briefcase, ClipboardCheck, GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, Briefcase, Users } from "lucide-react";
 import { Button, Page } from "@/components/ui";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MentorDashboard, OwnerDashboard, StaffDashboard, StudentDashboard } from "./dashboard";
 import { getSession } from "@/server/auth";
 import { getRoles } from "@/server/authz";
 import { getDb } from "@/server/db";
@@ -17,7 +18,7 @@ export default async function Home() {
   const session = await getSession();
   if (!session)
     return (
-      <main id="main" className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
         <p className="mb-3 text-sm font-medium text-primary">Real projects. Real mentors. Proven skills.</p>
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
           Go from “I studied this” to “here’s the work I did, and who reviewed it.”
@@ -40,32 +41,20 @@ export default async function Home() {
             </Card>
           ))}
         </div>
-      </main>
+      </div>
     );
 
-  const roles = await getRoles(getDb(), session.user.id);
+  const db = getDb();
+  const roles = await getRoles(db, session.user.id);
   if (!roles.isStudent && !roles.isStaff && !roles.ownerOf.length && !roles.mentorOf.length) redirect("/onboarding");
-  const tiles = [
-    roles.isStudent && { href: "/quests", icon: GraduationCap, title: "Your quests", text: "Applications, active work and your next milestone." },
-    roles.isStudent && { href: "/explore", icon: Briefcase, title: "Find a project", text: "Projects that fit your skills and weekly time." },
-    roles.ownerOf.length > 0 && { href: "/company", icon: Briefcase, title: "Company projects", text: "Drafts, applicants and results." },
-    roles.mentorOf.length > 0 && { href: "/mentor", icon: ClipboardCheck, title: "Mentor queue", text: "Reviews and questions waiting for you." },
-    roles.isStaff && { href: "/staff", icon: ShieldCheck, title: "Staff queue", text: "Organizations and briefs to approve." },
-  ].filter((t) => !!t);
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
   return (
-    <Page title={`Welcome back, ${session.user.name.split(" ")[0]}`} description="Where you left off.">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {tiles.map((t) => (
-          <Link key={t.href} href={t.href} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
-            <Card className="h-full transition-colors group-hover:border-primary/50">
-              <CardHeader>
-                <t.icon className="mb-2 size-6 text-primary" aria-hidden />
-                <CardTitle className="flex items-center gap-1">{t.title} <ArrowRight className="size-4 opacity-0 transition-opacity group-hover:opacity-100" /></CardTitle>
-                <CardDescription>{t.text}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
+    <Page title={`Welcome back, ${session.user.name.split(" ")[0]}`} description={today}>
+      <div className="grid gap-10">
+        {roles.isStaff && <StaffDashboard db={db} />}
+        {roles.ownerOf.length > 0 && <OwnerDashboard db={db} roles={roles} />}
+        {roles.mentorOf.length > 0 && <MentorDashboard db={db} userId={session.user.id} />}
+        {roles.isStudent && <StudentDashboard db={db} userId={session.user.id} />}
       </div>
     </Page>
   );

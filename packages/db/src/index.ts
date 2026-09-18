@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import * as schema from "./schema.ts";
 
 export * from "./schema.ts";
+export * from "./demo.ts";
 export { schema };
 export type Db = NodePgDatabase<typeof schema>;
 

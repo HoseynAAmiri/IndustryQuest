@@ -8,6 +8,13 @@
       "when": 1789771884190,
       "tag": "0000_old_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789773334398,
+      "tag": "0001_lush_pestilence",
+      "breakpoints": true
     }
   ]
 }

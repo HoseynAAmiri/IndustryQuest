@@ -132,6 +132,16 @@ export const briefVersions = pgTable(
   (t) => [uniqueIndex("brief_versions_project_version").on(t.projectId, t.version)],
 );
 
+export const savedProjects = pgTable(
+  "saved_projects",
+  {
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    createdAt: created(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.projectId] })],
+);
+
 // ── Enrollment: one row from application to completion (§13.2) ──
 
 export const enrollmentState = pgEnum("enrollment_state", ENROLLMENT_STATES);
