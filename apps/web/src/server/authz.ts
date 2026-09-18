@@ -1,12 +1,9 @@
-import "server-only";
 import { and, eq } from "drizzle-orm";
 import { memberships, studentProfiles, user, type Db } from "@iq/db";
+import { Forbidden } from "./errors";
 
 export type Actor = { id: string };
 
-export class Forbidden extends Error {
-  constructor(message = "You don't have access to this.") { super(message); }
-}
 
 export async function getRoles(db: Db, userId: string) {
   const [u] = await db.select({ isStaff: user.isStaff }).from(user).where(eq(user.id, userId));
