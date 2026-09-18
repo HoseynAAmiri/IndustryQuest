@@ -1,13 +1,13 @@
 import { and, desc, eq, gt, ilike, inArray, or, sql } from "drizzle-orm";
 import { SEAT_STATES, explainFit, tierFor, type Tier } from "@iq/core";
 import {
-  briefVersions, enrollments, organizations, projects, savedProjects, skillEvidence, skills, studentProfiles, user, type Db,
+  briefVersions, enrollments, organizations, projects, savedProjects, skillEvidence, skills, studentProfiles, user, type Db, type Tx,
 } from "@iq/db";
 import type { Actor } from "./authz";
 import { UserError } from "./errors";
 
 // Places held: participating students plus offers that haven't expired (PRD §11.3).
-export async function seatsTaken(db: Db, projectIds: string[]) {
+export async function seatsTaken(db: Db | Tx, projectIds: string[]) {
   if (!projectIds.length) return new Map<string, number>();
   const rows = await db.select({ id: enrollments.projectId, n: sql<number>`count(*)::int` }).from(enrollments)
     .where(and(inArray(enrollments.projectId, projectIds), or(
@@ -65,6 +65,11 @@ export async function listProjects(db: Db, viewer: Actor | null, f: Filters) {
   const names = await skillNames(db);
   const [profile] = viewer ? await db.select().from(studentProfiles).where(eq(studentProfiles.userId, viewer.id)) : [];
   const tiers = profile ? await studentTiers(db, viewer!.id) : {};
+  const mine = new Map(viewer
+    ? (await db.select({ id: enrollments.projectId, state: enrollments.state }).from(enrollments)
+        .where(and(eq(enrollments.studentId, viewer.id), inArray(enrollments.state, ["applied", "offered", "active", "submitted", "revision_requested", "completed"]))))
+        .map((m) => [m.id, m.state])
+    : []);
   const saved = new Set(viewer
     ? (await db.select({ id: savedProjects.projectId }).from(savedProjects).where(eq(savedProjects.userId, viewer.id))).map((s) => s.id)
     : []);
@@ -78,12 +83,12 @@ export async function listProjects(db: Db, viewer: Actor | null, f: Filters) {
           { text: `${b.title} ${b.summary}`, skills: b.skillIds.map((id) => ({ id, name: names[id] ?? id })), effortHours: b.effortHours, beginner: b.beginner, prerequisites: b.prerequisites },
         )
       : null;
-    return { ...r, b, openPlaces, fit, saved: saved.has(r.id) };
+    return { ...r, b, openPlaces, fit, saved: saved.has(r.id), myState: mine.get(r.id) ?? null };
   }).filter((c) => !f.openOnly || (c.state === "published" && c.openPlaces > 0));
 
   // For students: eligible, open projects with the best fit first (§11.2). Everyone else: newest first.
   if (profile) {
-    const rank = (c: (typeof cards)[number]) => (c.state !== "published" || !c.openPlaces ? -100 : 0) + (c.fit?.score ?? 0);
+    const rank = (c: (typeof cards)[number]) => (c.state !== "published" || !c.openPlaces || c.myState ? -100 : 0) + (c.fit?.score ?? 0);
     cards.sort((a, b) => rank(b) - rank(a));
   }
   return { cards, names, tiers, isStudent: !!profile };

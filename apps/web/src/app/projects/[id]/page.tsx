@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock, Mail, Sparkles } from "lucide-react";
 import { checkEligibility, explainFit } from "@iq/core";
-import { savedProjects, studentProfiles, user } from "@iq/db";
+import { enrollments, savedProjects, studentProfiles, user } from "@iq/db";
 import { toggleSave } from "@/app/explore/actions";
 import { BriefView } from "@/components/brief-view";
 import { availability } from "@/components/project-card";
-import { Alert, Button, Page, messages } from "@/components/ui";
+import { Alert, Button, ENROLLMENT, EnrollmentBadge, Page, messages } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/auth";
@@ -45,6 +45,10 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
     { interests: profile.interests, weeklyHours: profile.weeklyHours, tiers },
     { text: `${b.title} ${b.summary}`, skills: b.skillIds.map((s) => ({ id: s, name: names[s] ?? s })), effortHours: b.effortHours, beginner: b.beginner, prerequisites: b.prerequisites },
   );
+  const [mine] = profile ? await db.select().from(enrollments)
+    .where(and(eq(enrollments.projectId, id), eq(enrollments.studentId, session!.user.id))).orderBy(desc(enrollments.createdAt)).limit(1) : [];
+  const live = mine && ["applied", "offered", "active", "submitted", "revision_requested", "completed"].includes(mine.state);
+  const canApply = !!profile && !live && project.state === "published" && open > 0 && elig.eligible;
   const [saved] = profile ? await db.select().from(savedProjects).where(and(eq(savedProjects.userId, session!.user.id), eq(savedProjects.projectId, id))) : [];
 
   return (
@@ -72,6 +76,18 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
             </CardHeader>
             <CardContent className="grid gap-2">
               {!session && <Button asChild><Link href="/sign-in">Sign in to apply</Link></Button>}
+              {canApply && <Button asChild><Link href={`/projects/${id}/apply`}>Apply</Link></Button>}
+              {live && (
+                <div className="grid gap-2 rounded-lg border p-3 text-sm">
+                  <span className="flex items-center justify-between">Your status <EnrollmentBadge state={mine.state} /></span>
+                  <Button asChild size="sm" variant="secondary">
+                    <Link href={["applied", "offered"].includes(mine.state) ? "/quests" : `/workspace/${mine.id}`}>
+                      {["applied", "offered"].includes(mine.state) ? "See in My quests" : "Open workspace"}
+                    </Link>
+                  </Button>
+                </div>
+              )}
+              {mine && !live && <p className="text-sm text-muted-foreground">Last application: {ENROLLMENT[mine.state][0].toLowerCase()}. You can apply again.</p>}
               {profile && (
                 <form action={toggleSave}>
                   <input type="hidden" name="projectId" value={id} />

@@ -3,8 +3,11 @@ import { redirect } from "next/navigation";
 import { TransitionError } from "@iq/core";
 import { UserError } from "./errors";
 
-const withParam = (path: string, key: string, value: string) =>
-  `${path}${path.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
+// Query goes before any #fragment, or the browser treats it as part of the fragment.
+function withParam(path: string, key: string, value: string) {
+  const [base, hash] = path.split("#");
+  return `${base}${base.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}${hash ? `#${hash}` : ""}`;
+}
 
 // Runs a domain call from a Server Action. Expected failures go back to the form as ?error=.
 type Url = string | (() => string);

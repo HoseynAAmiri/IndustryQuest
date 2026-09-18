@@ -11,6 +11,8 @@ import { getDb } from "@/server/db";
 import { loadProject } from "@/server/projects";
 import { BriefForm } from "../../brief-form";
 import { formOptions } from "../../data";
+import { Applicants } from "../../applicants";
+import { seatsTaken } from "@/server/discovery";
 
 export default async function EditBrief({ params, searchParams }: PageProps<"/company/projects/[id]">) {
   const me = await requireUser();
@@ -52,6 +54,13 @@ export default async function EditBrief({ params, searchParams }: PageProps<"/co
   return (
     <Page {...page} description={project.state === "in_review" ? "Staff are reviewing this brief. It can't be edited meanwhile." : undefined}>
       {header}
+      {["published", "paused", "closed"].includes(project.state) && (
+        <div className="mb-8">
+          <Applicants db={db} projectId={project.id} capacity={brief.capacity}
+            openPlaces={Math.max(0, brief.capacity - ((await seatsTaken(db, [project.id])).get(project.id) ?? 0))} />
+        </div>
+      )}
+      <h2 className="mb-3 text-lg font-semibold">Published brief</h2>
       <BriefView b={brief.content} orgName={org.name} mentorName={mentor?.name} skillNames={names} />
     </Page>
   );

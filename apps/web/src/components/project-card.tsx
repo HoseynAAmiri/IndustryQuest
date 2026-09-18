@@ -6,10 +6,12 @@ import { COMP } from "@/components/brief-view";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ENROLLMENT, EnrollmentBadge } from "@/components/ui";
 
 export type CardData = {
   id: string; state: string; b: Brief; org: string; mentor: string | null; openPlaces: number; saved: boolean;
   fit: { eligible: boolean; reasons: string[] } | null;
+  myState?: keyof typeof ENROLLMENT | null;
 };
 
 const TIER_NAME = { emerging: "Emerging", bronze: "Bronze" } as const;
@@ -26,7 +28,7 @@ export function ProjectCard({ c, names, tiers, back }: { c: CardData; names: Rec
   const avail = availability(c.state, c.openPlaces, c.b.capacity);
   const missing = c.fit ? checkEligibility(c.b.prerequisites, tiers).missing : [];
   return (
-    <Card className="flex flex-col transition-colors hover:border-primary/40">
+    <Card className="relative flex flex-col transition-colors hover:border-primary/40">
       <CardHeader>
         <CardDescription className="flex items-center justify-between gap-2">
           <span className="truncate">{c.org}</span>
@@ -57,10 +59,10 @@ export function ProjectCard({ c, names, tiers, back }: { c: CardData; names: Rec
         )}
       </CardContent>
       <CardFooter className="relative flex items-center justify-between gap-2 border-t pt-4 text-sm">
-        <span className="flex items-center gap-1.5">
+        {c.myState ? <EnrollmentBadge state={c.myState} /> : <span className="flex items-center gap-1.5">
           {avail.tone === "default" ? <CircleCheck className="size-4 text-green-600" /> : <Users className="size-4 text-muted-foreground" />}
           {avail.label}
-        </span>
+        </span>}
         {c.fit && (
           <form action={toggleSave}>
             <input type="hidden" name="projectId" value={c.id} />

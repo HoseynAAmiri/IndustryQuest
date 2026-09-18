@@ -1,13 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
-import { ArrowRight, Building2, ClipboardCheck, FileText, Pencil, ShieldCheck, Sparkles, Users } from "lucide-react";
-import { briefVersions, organizations, projects, savedProjects, studentProfiles, type Db } from "@iq/db";
+import { and, asc, count, desc, eq, inArray, isNull, sum } from "drizzle-orm";
+import { ArrowRight, BadgeCheck, Building2, CalendarClock, ClipboardCheck, FileText, Inbox, Pencil, ShieldCheck, Sparkles, Target, Trophy, Users } from "lucide-react";
+import { progress } from "@iq/core";
+import { briefVersions, enrollments, milestones, organizations, projects, savedProjects, studentProfiles, xpTransactions, type Db } from "@iq/db";
 import { ProjectCard } from "@/components/project-card";
-import { Button, ListingBadge } from "@/components/ui";
+import { Button, EnrollmentBadge, ListingBadge, when } from "@/components/ui";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { getRoles } from "@/server/authz";
 import { listProjects } from "@/server/discovery";
+import { expireStaleOffers } from "@/server/enrollments";
 
 type Roles = Awaited<ReturnType<typeof getRoles>>;
 
@@ -39,20 +42,74 @@ function Section({ title, description, href, cta, children }: { title: string; d
 }
 
 export async function StudentDashboard({ db, userId }: { db: Db; userId: string }) {
+  await expireStaleOffers(db);
   const [profile] = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId));
   const { cards, names, tiers } = await listProjects(db, { id: userId }, { openOnly: true });
-  const [saved] = await db.select({ n: count() }).from(savedProjects).where(eq(savedProjects.userId, userId));
-  const eligible = cards.filter((c) => c.fit?.eligible).length;
+  const [[xpRow], [saved]] = await Promise.all([
+    db.select({ n: sum(xpTransactions.amount) }).from(xpTransactions).where(eq(xpTransactions.userId, userId)),
+    db.select({ n: count() }).from(savedProjects).where(eq(savedProjects.userId, userId)),
+  ]);
+  const xp = Number(xpRow.n ?? 0);
+  const p = progress(xp);
+  const mine = await db.select({ e: enrollments, title: briefVersions.title }).from(enrollments)
+    .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
+    .where(and(eq(enrollments.studentId, userId), inArray(enrollments.state, ["offered", "active", "submitted", "revision_requested"])))
+    .orderBy(desc(enrollments.updatedAt));
+  const next = await Promise.all(mine.filter((m) => m.e.state !== "offered").map(async (m) => {
+    const [ms] = await db.select().from(milestones).where(and(eq(milestones.enrollmentId, m.e.id), isNull(milestones.doneAt))).orderBy(asc(milestones.dueAt)).limit(1);
+    return { ...m, ms };
+  }));
+  const offers = mine.filter((m) => m.e.state === "offered");
+  const verified = Object.values(tiers).filter((t) => t !== "none").length;
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Open projects you can join" value={eligible} icon={Sparkles} hint={`${cards.length - eligible} more unlock with skill evidence`} />
+      {offers.map((o) => (
+        <Link key={o.e.id} href="/quests" className="flex items-center gap-3 rounded-xl border border-primary/50 bg-primary/5 p-4 hover:bg-primary/10">
+          <Inbox className="size-5 text-primary" />
+          <span className="flex-1"><span className="font-medium">You have an offer: {o.title}</span>
+            <span className="block text-sm text-muted-foreground">Reply by {when(o.e.offerExpiresAt, profile.timezone, true)}</span></span>
+          <ArrowRight className="size-4" />
+        </Link>
+      ))}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link href="/profile" className="rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
+          <Card className="h-full gap-2 py-4">
+            <CardHeader className="px-4">
+              <CardDescription className="flex items-center justify-between">Level {p.level}<Trophy className="size-4" /></CardDescription>
+              <CardTitle className="text-2xl tabular-nums">{xp} XP</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-1.5 px-4">
+              <Progress value={((xp - p.levelStart) / (p.nextLevelAt - p.levelStart)) * 100} aria-label={`${p.nextLevelAt - xp} XP to level ${p.level + 1}`} />
+              <span className="text-xs text-muted-foreground">{p.nextLevelAt - xp} XP to level {p.level + 1}</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Stat label="Active quests" value={next.length} icon={Target} hint={offers.length ? `${offers.length} offer waiting` : undefined} />
+        <Stat label="Verified skills" value={verified} icon={BadgeCheck} hint={verified ? Object.entries(tiers).filter(([, t]) => t !== "none").map(([id, t]) => `${names[id]} (${t})`).join(", ") : "Earned from reviewed work"} />
         <Stat label="Saved projects" value={saved.n} icon={FileText} />
-        <Stat label="Hours a week" value={profile.weeklyHours || "Not set"} icon={Users} hint={profile.interests.length ? `Interests: ${profile.interests.join(", ")}` : "Add interests for better suggestions"} />
       </div>
+      {next.length > 0 && (
+        <Section title="Continue where you left off" href="/quests" cta="My quests">
+          <div className="grid gap-4 md:grid-cols-2">
+            {next.map((n) => (
+              <Card key={n.e.id}>
+                <CardHeader>
+                  <CardTitle className="text-base">{n.title}</CardTitle>
+                  <CardDescription className="flex items-center gap-1.5">
+                    <CalendarClock className="size-3.5" />
+                    {n.e.state === "submitted" ? "Waiting for your mentor's review" : n.ms ? `Next: ${n.ms.title}, due ${when(n.ms.dueAt, profile.timezone)}` : "All milestones done. Time to submit."}
+                  </CardDescription>
+                  <CardAction><EnrollmentBadge state={n.e.state} /></CardAction>
+                </CardHeader>
+                <CardContent><Button asChild size="sm"><Link href={`/workspace/${n.e.id}`}>Open workspace <ArrowRight /></Link></Button></CardContent>
+              </Card>
+            ))}
+          </div>
+        </Section>
+      )}
       <Section title="Recommended for you" description="Chosen from your interests, weekly time and skill evidence." href="/explore" cta="Explore all">
         <div className="grid gap-4 md:grid-cols-3">
-          {cards.slice(0, 3).map((c) => <ProjectCard key={c.id} c={c} names={names} tiers={tiers} back="/" />)}
+          {cards.filter((c) => !c.myState).slice(0, 3).map((c) => <ProjectCard key={c.id} c={c} names={names} tiers={tiers} back="/" />)}
         </div>
         <p className="text-sm text-muted-foreground">
           Suggestions look off? <Link href="/onboarding" className="text-primary underline-offset-4 hover:underline">Update your interests and hours</Link>.
@@ -68,10 +125,13 @@ export async function OwnerDashboard({ db, roles }: { db: Db; roles: Roles }) {
     .innerJoin(organizations, eq(organizations.id, projects.orgId))
     .where(inArray(projects.orgId, roles.ownerOf)).orderBy(desc(projects.updatedAt));
   const by = (s: string) => rows.filter((r) => r.state === s).length;
+  const [applicants] = rows.length ? await db.select({ n: count() }).from(enrollments)
+    .where(and(inArray(enrollments.projectId, rows.map((r) => r.id)), eq(enrollments.state, "applied"))) : [{ n: 0 }];
   const attention = rows.filter((r) => r.state === "changes_requested" || r.state === "draft");
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Stat label="Applicants waiting" value={applicants.n} icon={Inbox} hint="Open a live brief to review them" />
         <Stat label="Published" value={by("published")} icon={Building2} />
         <Stat label="In staff review" value={by("in_review")} icon={ShieldCheck} />
         <Stat label="Changes requested" value={by("changes_requested")} icon={Pencil} />
@@ -103,9 +163,17 @@ export async function MentorDashboard({ db, userId }: { db: Db; userId: string }
   const rows = await db.select({ id: projects.id, state: projects.state, title: briefVersions.title, tier: briefVersions.tier, org: organizations.name })
     .from(projects).innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId))
     .innerJoin(organizations, eq(organizations.id, projects.orgId))
-    .where(and(eq(briefVersions.mentorId, userId), inArray(projects.state, ["published", "paused", "in_review"])));
+    .where(and(eq(briefVersions.mentorId, userId), inArray(projects.state, ["published", "paused"])));
+  const mine = await db.select({ state: enrollments.state }).from(enrollments)
+    .where(and(eq(enrollments.mentorId, userId), inArray(enrollments.state, ["active", "submitted", "revision_requested"])));
+  const waiting = mine.filter((m) => m.state === "submitted").length;
   return (
-    <Section title="Projects you mentor" description="You're the named mentor on these briefs.">
+    <Section title="Mentoring" href="/mentor" cta="Open review queue">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Stat label="Waiting for your review" value={waiting} icon={ClipboardCheck} hint="Target: feedback within 5 business days" />
+        <Stat label="Active mentees" value={mine.length - waiting} icon={Users} />
+        <Stat label="Live projects you mentor" value={rows.length} icon={Building2} />
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {rows.map((r) => (
           <Card key={r.id}>

@@ -5,6 +5,7 @@ import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { UserError } from "@/server/errors";
+import { makeOffer, reject } from "@/server/enrollments";
 import { saveDraft, submitForReview } from "@/server/projects";
 
 const ROWS = 5;
@@ -51,4 +52,16 @@ export async function saveBrief(form: FormData) {
     id = await saveDraft(getDb(), user, { projectId, orgId, brief: parseBrief(form) });
     if (submit) await submitForReview(getDb(), user, id);
   }, { to: back, info: submit ? "Submitted for staff review." : "Draft saved." });
+}
+
+export async function offerAction(form: FormData) {
+  const user = await requireUser();
+  const back = `/company/projects/${s(form, "projectId")}#applicants`;
+  await act(back, () => makeOffer(getDb(), user, { enrollmentId: s(form, "enrollmentId") }), { info: "Offer sent. It holds a place for 5 days." });
+}
+
+export async function rejectAction(form: FormData) {
+  const user = await requireUser();
+  const back = `/company/projects/${s(form, "projectId")}#applicants`;
+  await act(back, () => reject(getDb(), user, { enrollmentId: s(form, "enrollmentId"), note: s(form, "note") }), { info: "Applicant notified. Nothing negative appears on their profile." });
 }

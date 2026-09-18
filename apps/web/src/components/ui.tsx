@@ -87,7 +87,7 @@ export function Page({ title, description, children, back, actions, narrow }: {
   actions?: ReactNode; narrow?: boolean;
 }) {
   return (
-    <div className={`mx-auto px-4 py-8 sm:py-10 ${narrow ? "max-w-md" : "max-w-6xl"}`}>
+    <div className={`mx-auto w-full px-4 py-8 sm:py-10 ${narrow ? "max-w-md" : "max-w-6xl"}`}>
       {back && (
         <Link href={back.href} className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" /> {back.label}
@@ -119,4 +119,25 @@ const LISTING = {
 export function ListingBadge({ state }: { state: keyof typeof LISTING }) {
   const [label, variant] = LISTING[state];
   return <Badge variant={variant}>{label}</Badge>;
+}
+
+export const ENROLLMENT = {
+  applied: ["Applied", "secondary"], declined: ["Not selected", "outline"], withdrawn: ["Withdrawn", "outline"],
+  offered: ["Offer waiting", "default"], offer_declined: ["Offer declined", "outline"], offer_expired: ["Offer expired", "outline"],
+  active: ["In progress", "default"], submitted: ["Submitted for review", "secondary"], revision_requested: ["Revision requested", "destructive"],
+  completed: ["Completed", "default"], closed_incomplete: ["Closed", "outline"],
+} as const;
+
+export function EnrollmentBadge({ state }: { state: keyof typeof ENROLLMENT }) {
+  const [label, variant] = ENROLLMENT[state];
+  return <Badge variant={variant}>{label}</Badge>;
+}
+
+// EXP-05: dates always carry their timezone.
+export function when(d: Date | null | undefined, timeZone = "UTC", withTime = false) {
+  if (!d) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric", month: "short", year: "numeric", timeZone,
+    ...(withTime && { hour: "2-digit", minute: "2-digit", timeZoneName: "short" }),
+  }).format(d) + (withTime ? "" : timeZone === "UTC" ? " (UTC)" : "");
 }
