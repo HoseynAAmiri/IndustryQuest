@@ -54,7 +54,7 @@ pnpm db:seed      # fictional demo data
 pnpm dev          # next dev on :3000, with Cloudflare bindings emulated
 pnpm test         # vitest in every package
 pnpm typecheck
-pnpm --filter web preview   # build and run in the local Workers runtime on :8787
+pnpm --filter web preview   # build and run in the local Workers runtime on :3000 (stop `pnpm dev` first)
 ```
 
 Cloudflare bindings are declared in `apps/web/wrangler.jsonc`: `HYPERDRIVE` (Postgres) and `FILES` (R2). Run `pnpm --filter web cf-typegen` after changing that file. Before the first deploy, replace the placeholder Hyperdrive id with the one from `wrangler hyperdrive create`.
