@@ -18,6 +18,7 @@ export async function enrollmentAccess(db: Db, actor: Actor, enrollmentId: strin
   if (row.e.mentorId === actor.id) return "mentor";
   const roles = await getRoles(db, actor.id);
   if (roles.ownerOf.includes(row.orgId)) return "owner";
+  // ponytail: staff access is not logged yet; add an audit_events row here before real participant data (OPS-07).
   if (roles.isStaff) return "staff";
   throw new Forbidden();
 }
