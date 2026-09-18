@@ -1,8 +1,10 @@
+import { CircleCheck, ListChecks } from "lucide-react";
 import { canPublish } from "@iq/core";
 import { eq } from "drizzle-orm";
 import { skills, user } from "@iq/db";
 import { BriefView } from "@/components/brief-view";
-import { Alert, Page, messages } from "@/components/ui";
+import { Alert, ListingBadge, Page, messages } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/server/auth";
 import { getRoles } from "@/server/authz";
 import { getDb } from "@/server/db";
@@ -19,25 +21,27 @@ export default async function EditBrief({ params, searchParams }: PageProps<"/co
     return <Page title="Brief"><Alert>This brief doesn't exist or you don't have access.</Alert></Page>;
   const editable = project.state === "draft" || project.state === "changes_requested";
   const blockers = canPublish(brief.content, { verified: !!org.verifiedAt });
-  const back = { href: "/company", label: "Company projects" };
+  const page = { title: brief.title || "Untitled draft", back: { href: "/company", label: "Company projects" }, actions: <ListingBadge state={project.state} /> };
 
   const header = (
-    <div className="mb-6 space-y-3">
+    <div className="mb-6 grid gap-3">
       <Alert>{error}</Alert>
       <Alert tone="info">{info}</Alert>
       {project.state === "changes_requested" && <Alert>Staff asked for changes: {project.reviewNote}</Alert>}
       {editable && (blockers.length ? (
-        <div className="rounded border border-amber-600 bg-amber-50 p-3">
-          <h2 className="font-semibold">Still needed before you can submit</h2>
-          <ul className="list-disc pl-6">{blockers.map((b) => <li key={b}>{b}</li>)}</ul>
-        </div>
-      ) : <Alert tone="info">Everything required is filled in. You can submit this brief for review.</Alert>)}
+        <Card className="border-amber-500/50 bg-amber-50/60 dark:bg-amber-950/20">
+          <CardHeader><CardTitle className="flex items-center gap-2"><ListChecks className="size-5 text-amber-600" /> Still needed before you can submit</CardTitle></CardHeader>
+          <CardContent><ul className="list-disc space-y-1 pl-5">{blockers.map((b) => <li key={b}>{b}</li>)}</ul></CardContent>
+        </Card>
+      ) : (
+        <Alert tone="info"><span className="inline-flex items-center gap-1"><CircleCheck className="size-4" /> Everything required is filled in. You can submit this brief for review.</span></Alert>
+      ))}
     </div>
   );
 
   if (editable)
     return (
-      <Page title={brief.title || "Untitled draft"} back={back}>
+      <Page {...page}>
         {header}
         <BriefForm orgId={project.orgId} projectId={project.id} b={brief.content} {...await formOptions(db, project.orgId)} />
       </Page>
@@ -46,11 +50,8 @@ export default async function EditBrief({ params, searchParams }: PageProps<"/co
   const [mentor] = brief.mentorId ? await db.select({ name: user.name }).from(user).where(eq(user.id, brief.mentorId)) : [];
   const names = Object.fromEntries((await db.select().from(skills)).map((s) => [s.id, s.name]));
   return (
-    <Page title={brief.title} back={back}>
+    <Page {...page} description={project.state === "in_review" ? "Staff are reviewing this brief. It can't be edited meanwhile." : undefined}>
       {header}
-      <p className="mb-4 text-slate-700">
-        {project.state === "in_review" ? "Staff are reviewing this brief. It can't be edited meanwhile." : `Status: ${project.state}.`}
-      </p>
       <BriefView b={brief.content} orgName={org.name} mentorName={mentor?.name} skillNames={names} />
     </Page>
   );

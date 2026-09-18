@@ -1,5 +1,6 @@
 "use server";
 import { briefSchema, type Brief } from "@iq/core";
+import { NONE } from "@/components/ui";
 import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
@@ -7,7 +8,10 @@ import { UserError } from "@/server/errors";
 import { saveDraft, submitForReview } from "@/server/projects";
 
 const ROWS = 5;
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
+const s = (f: FormData, k: string) => {
+  const v = String(f.get(k) ?? "").trim();
+  return v === NONE ? "" : v;
+};
 const lines = (v: string) => v.split("\n").map((l) => l.trim()).filter(Boolean);
 
 function parseBrief(f: FormData): Brief {

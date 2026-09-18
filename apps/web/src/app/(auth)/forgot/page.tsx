@@ -1,15 +1,18 @@
-import { Alert, Button, Field, Page, messages } from "@/components/ui";
+import Link from "next/link";
+import { Alert, Button, Field, messages } from "@/components/ui";
 import { forgotPassword } from "../actions";
+import { AuthCard } from "../card";
 
 export default async function Forgot({ searchParams }: PageProps<"/forgot">) {
   const { info } = await messages(searchParams);
   return (
-    <Page title="Reset your password" back={{ href: "/sign-in", label: "Sign in" }}>
-      <form action={forgotPassword} className="max-w-sm space-y-4">
+    <AuthCard title="Reset your password" description="We'll email you a link to choose a new one."
+      footer={<Link className="font-medium text-primary underline-offset-4 hover:underline" href="/sign-in">Back to sign in</Link>}>
+      <form action={forgotPassword} className="grid gap-4">
         <Alert tone="info">{info}</Alert>
         <Field label="Email" name="email" type="email" autoComplete="email" required />
-        <Button type="submit">Send reset link</Button>
+        <Button type="submit" className="w-full">Send reset link</Button>
       </form>
-    </Page>
+    </AuthCard>
   );
 }

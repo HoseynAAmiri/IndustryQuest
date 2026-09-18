@@ -1,8 +1,10 @@
+import { Check } from "lucide-react";
 import { canPublish } from "@iq/core";
 import { eq } from "drizzle-orm";
 import { skills, user } from "@iq/db";
 import { BriefView } from "@/components/brief-view";
-import { Alert, Button, Page, TextArea, messages } from "@/components/ui";
+import { Alert, Button, ListingBadge, Page, TextArea, messages } from "@/components/ui";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/server/auth";
 import { getRoles } from "@/server/authz";
 import { getDb } from "@/server/db";
@@ -29,25 +31,33 @@ export default async function StaffReview({ params, searchParams }: PageProps<"/
   const names = Object.fromEntries((await db.select().from(skills)).map((s) => [s.id, s.name]));
   const blockers = canPublish(brief.content, { verified: !!org.verifiedAt });
   return (
-    <Page title={`Review: ${brief.title}`} back={{ href: "/staff", label: "Staff queue" }}>
-      <div className="mb-6 space-y-2">
+    <Page title={brief.title} description={`Review for ${org.name}`} back={{ href: "/staff", label: "Staff queue" }} actions={<ListingBadge state={project.state} />}>
+      <div className="mb-6 grid gap-3">
         <Alert>{error}</Alert>
         {blockers.length > 0 && <Alert>Automatic checks failed: {blockers.join(" ")}</Alert>}
       </div>
       <BriefView b={brief.content} orgName={org.name} mentorName={mentor?.name} skillNames={names} />
-      {project.state === "in_review" ? (
-        <form action={review} className="mt-8 space-y-4 rounded border p-4">
-          <input type="hidden" name="projectId" value={project.id} />
-          <h2 className="text-lg font-semibold">Quality gate (PRD §9.2)</h2>
-          <p className="text-sm text-slate-600">Confirm each point before approving. If any fails, request changes and say why.</p>
-          <ul className="list-disc pl-6">{GATE.map((g) => <li key={g}>{g}</li>)}</ul>
-          <TextArea label="Note to the owner" name="note" hint="Required when requesting changes." />
-          <div className="flex gap-3">
-            <Button name="decision" value="approve" className="bg-green-800 hover:bg-green-900">Approve and publish</Button>
-            <Button name="decision" value="changes">Request changes</Button>
-          </div>
-        </form>
-      ) : <p className="mt-6">This brief is {project.state}, so there is nothing to review.</p>}
+      {project.state === "in_review" && (
+        <Card className="mt-6 border-primary/40">
+          <form action={review}>
+            <CardHeader>
+              <CardTitle>Quality gate</CardTitle>
+              <CardDescription>Confirm each point before approving (PRD §9.2). If one fails, request changes and say why.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-5 pt-4">
+              <input type="hidden" name="projectId" value={project.id} />
+              <ul className="grid gap-2">
+                {GATE.map((g) => <li key={g} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />{g}</li>)}
+              </ul>
+              <TextArea label="Note to the owner" name="note" hint="Required when requesting changes." rows={3} />
+            </CardContent>
+            <CardFooter className="mt-4 gap-2">
+              <Button name="decision" value="approve">Approve and publish</Button>
+              <Button name="decision" value="changes" variant="outline">Request changes</Button>
+            </CardFooter>
+          </form>
+        </Card>
+      )}
     </Page>
   );
 }
