@@ -42,7 +42,7 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
   return (
     <Page title="Review queue" description="Submissions waiting for you, and the students you support.">
       <div className="mb-6 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="Waiting for review" value={queue.length} icon={ClipboardCheck} hint="Target: feedback within 5 business days" />
         <Stat label="Past the target" value={overdue} icon={Clock} hint={overdue ? "Staff get an escalation for these" : "Nothing overdue"} />
         <Stat label="Active mentees" value={mentees.length} icon={Users} />
@@ -56,7 +56,7 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
                 const days = businessDaysSince(q.s.createdAt);
                 return (
                   <li key={q.e.id}>
-                    <Link href={`/mentor/review/${q.s.id}`} className="flex items-center gap-3 p-3 hover:bg-muted/50">
+                    <Link href={`/mentor/review/${q.s.id}`} className="press flex items-center gap-3 p-3 hover:bg-muted/50">
                       <span className="flex-1">
                         <span className="block font-medium">{q.student}</span>
                         <span className="text-sm text-muted-foreground">{q.title} · version {q.s.version}</span>

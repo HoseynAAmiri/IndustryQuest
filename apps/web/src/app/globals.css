@@ -196,3 +196,36 @@
     @apply font-sans;
     }
 }
+/* ── Motion and touch ──
+   Only transform, opacity and shadow animate, so it stays smooth on phones. Hover effects apply only
+   on devices that really hover (no sticky hover after a tap), and reduced-motion turns it all off. */
+@utility lift {
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease, border-color 180ms ease;
+  @media (hover: hover) {
+    &:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  }
+  &:active { transform: translateY(0) scale(0.985); transition-duration: 80ms; }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover, &:active { transform: none; }
+  }
+}
+
+@utility press {
+  transition: transform 120ms ease, background-color 150ms ease;
+  &:active { transform: scale(0.98); }
+  @media (prefers-reduced-motion: reduce) {
+    &:active { transform: none; }
+  }
+}
+
+@layer base {
+  a, button, [role="button"], summary { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+  /* Touch screens: at least 40px tap targets (WCAG 2.5.8 asks 24; 40 is kinder to thumbs). */
+  @media (pointer: coarse) {
+    [data-slot="button"], [data-slot="select-trigger"], [data-slot="tabs-trigger"] { min-height: 2.5rem; }
+    [data-slot="button"][data-size^="icon"] { min-width: 2.5rem; }
+    [data-slot="input"] { min-height: 2.75rem; }
+  }
+}

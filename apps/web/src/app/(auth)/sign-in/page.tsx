@@ -37,7 +37,7 @@ export default async function SignIn({ searchParams }: PageProps<"/sign-in">) {
                 <li key={p.email}>
                   <form action={demoSignIn}>
                     <input type="hidden" name="email" value={p.email} />
-                    <button className="group flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
+                    <button className="press group flex w-full items-center gap-3 rounded-lg border p-3 text-left hover:border-primary/50 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
                       <span className="flex-1">
                         <span className="flex flex-wrap items-center gap-2 font-medium">{p.name} <Badge variant="outline">{p.role}</Badge></span>
                         <span className="text-sm text-muted-foreground">{p.shows}</span>

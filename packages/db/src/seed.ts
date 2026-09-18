@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { TIER_XP, briefSchema, type Brief, type Criterion } from "@iq/core";
 import {
-  DEMO_PASSWORD, DEMO_PERSONAS, account, briefVersions, connect, memberships, organizations, projects, skills, studentProfiles, user,
+  DEMO_PASSWORD, DEMO_PERSONAS, account, briefVersions, connect, memberships, organizations, projects, skillClaims, skills, studentProfiles, user,
 } from "./index.ts";
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed a production database.");
@@ -38,8 +38,17 @@ await db.insert(account).values(people.map((p) => ({ id: `a-${p.id}`, accountId:
 
 // newbie@ deliberately has no profile, so signing in shows onboarding.
 await db.insert(studentProfiles).values([
-  { userId: "u-student", interests: ["vibration analysis", "Python", "maintenance"], goals: "Get hands-on with real sensor data and land a reliability internship.", weeklyHours: 6, timezone: "Europe/London", bio: "Third-year mechanical engineering student." },
+  { userId: "u-student", interests: ["vibration analysis", "Python", "maintenance"], goals: "Get hands-on with real sensor data and land a reliability internship.", weeklyHours: 6, timezone: "Europe/London", pronouns: "she/her", discipline: "Mechanical engineering", bio: "Third-year student who likes finding out why machines fail." },
   ...extraStudents.map(([id], i) => ({ userId: id, interests: [["data cleaning"], ["forecasting"], ["Python"], ["signal analysis"], ["visualization"], ["process mapping"]][i], weeklyHours: 4 + i, timezone: "UTC" })),
+]);
+
+await db.insert(skillClaims).values([
+  { userId: "u-student", skillId: "python-data", level: "coursework", note: "Numerical Methods, year 2" },
+  { userId: "u-student", skillId: "signal-analysis", level: "coursework", note: "Signals and Systems lab" },
+  { userId: "u-student", skillId: "forecasting", level: "learning", note: "Online course, halfway through" },
+  { userId: "s-jonas", skillId: "signal-analysis", level: "practical", note: "Built vibration sensor rigs for a robotics club" },
+  { userId: "s-dev", skillId: "data-cleaning", level: "coursework", note: "Sports analytics module" },
+  { userId: "s-dev", skillId: "python-data", level: "practical", note: "Part-time data assistant" },
 ]);
 
 // ── Organizations ──

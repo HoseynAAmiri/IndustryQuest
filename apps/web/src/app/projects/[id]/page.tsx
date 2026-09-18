@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
-import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock, Mail, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock, Mail } from "lucide-react";
 import { checkEligibility, explainFit } from "@iq/core";
 import { enrollments, savedProjects, studentProfiles, user } from "@iq/db";
 import { toggleSave } from "@/app/explore/actions";
@@ -128,7 +128,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
                   <div>
                     <p className="mb-1.5 font-medium">Why it could suit you</p>
                     <ul className="grid gap-1.5 text-muted-foreground">
-                      {fit.reasons.map((r) => <li key={r} className="flex items-start gap-1.5"><Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />{r}</li>)}
+                      {fit.reasons.map((r) => <li key={r} className="flex items-baseline gap-2"><span className="size-1.5 shrink-0 translate-y-[-2px] rounded-full bg-primary" aria-hidden />{r}</li>)}
                     </ul>
                   </div>
                 )}

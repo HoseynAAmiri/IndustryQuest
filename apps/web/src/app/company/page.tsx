@@ -36,7 +36,7 @@ export default async function Company() {
                 <ul className="divide-y rounded-lg border">
                   {mine.map(({ p, title, tier }) => (
                     <li key={p.id}>
-                      <Link href={`/company/projects/${p.id}`} className="flex items-center gap-3 p-3 hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
+                      <Link href={`/company/projects/${p.id}`} className="press flex items-center gap-3 p-3 hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
                         <span className="flex-1 font-medium">{title || "Untitled draft"}</span>
                         <span className="text-sm text-muted-foreground">{tier}</span>
                         <ListingBadge state={p.state} />

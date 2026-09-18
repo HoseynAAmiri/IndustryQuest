@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
-import { Award, BadgeCheck, Copy, Eye, EyeOff, Medal, Sparkles, Star, Trophy } from "lucide-react";
+import { Award, BadgeCheck, Copy, Eye, EyeOff, Medal, Pencil, Sparkles, Star, Trophy } from "lucide-react";
 import { progress, tierFor } from "@iq/core";
-import { briefVersions, credentials, enrollments, organizations, projects, skillEvidence, skills, studentProfiles, xpTransactions } from "@iq/db";
+import { briefVersions, credentials, enrollments, organizations, projects, skillClaims, skillEvidence, skills, studentProfiles, xpTransactions } from "@iq/db";
+import { CLAIM_LEVELS } from "@/server/profile";
 import { Stat } from "@/app/dashboard";
 import { Alert, Button, Page, messages, when } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import { getDb } from "@/server/db";
 import { issuePendingFor } from "@/server/rewards";
 import { shareAction } from "./actions";
 
-export const metadata: Metadata = { title: "Profile and skills" };
+export const metadata: Metadata = { title: "Profile" };
 
 const KIND = { completion: Trophy, achievement: Medal, skill_tier: Award } as const;
 
@@ -43,10 +44,15 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
   const bySkill = Object.entries(Object.groupBy(evidence, (e) => e.ev.skillId)).map(([id, rows]) => ({
     id, name: rows![0].skill, rows: rows!, tier: tierFor(rows!.map((r) => r.ev)),
   }));
+  const claims = await db.select({ c: skillClaims, name: skills.name }).from(skillClaims)
+    .innerJoin(skills, eq(skills.id, skillClaims.skillId)).where(eq(skillClaims.userId, me.id));
   const completed = creds.filter((c) => c.kind === "completion").length;
 
   return (
-    <Page title={me.name} description={profile.bio || "Your XP, verified skills and shareable records."}>
+    <Page title={me.name}
+      description={[profile.pronouns, profile.discipline].filter(Boolean).join(" · ") || "Your XP, verified skills and shareable records."}
+      actions={<Button asChild variant="outline"><Link href="/profile/edit"><Pencil /> Edit profile</Link></Button>}>
+      {profile.bio && <p className="-mt-3 mb-6 max-w-prose text-muted-foreground">{profile.bio}</p>}
       <div className="mb-6 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
 
       <Card className="mb-6">
@@ -64,7 +70,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
         </CardContent>
       </Card>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="Verified projects" value={completed} icon={Trophy} />
         <Stat label="Skills with evidence" value={bySkill.filter((s) => s.tier !== "none").length} icon={Sparkles} />
         <Stat label="Achievements" value={creds.filter((c) => c.kind === "achievement").length} icon={Star} />
@@ -92,12 +98,17 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
               </div>
             ))}
             {!bySkill.length && <p className="text-sm text-muted-foreground">No verified skills yet. Complete a project to earn your first evidence.</p>}
-            {profile.interests.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-                <span className="text-sm text-muted-foreground">Self-reported interests</span>
-                {profile.interests.map((i) => <Badge key={i} variant="outline">{i}</Badge>)}
+            <div className="grid gap-2 border-t pt-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">Self-reported</span>
+                <Button asChild variant="ghost" size="sm"><Link href="/profile/skills">Manage</Link></Button>
               </div>
-            )}
+              <div className="flex flex-wrap gap-2">
+                {claims.map(({ c, name }) => <Badge key={c.skillId} variant="outline">{name} · {CLAIM_LEVELS[c.level].toLowerCase()}</Badge>)}
+                {!claims.length && <span className="text-sm text-muted-foreground">Add skills you've learned in courses or jobs.</span>}
+              </div>
+              {profile.interests.length > 0 && <p className="text-sm text-muted-foreground">Interests: {profile.interests.join(", ")}</p>}
+            </div>
           </CardContent>
         </Card>
 

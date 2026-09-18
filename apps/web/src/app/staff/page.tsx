@@ -33,7 +33,7 @@ export default async function Staff({ searchParams }: PageProps<"/staff">) {
             <ul className="divide-y rounded-lg border">
               {queue.map((q) => (
                 <li key={q.id}>
-                  <Link href={`/staff/projects/${q.id}`} className="flex items-center gap-3 p-3 hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
+                  <Link href={`/staff/projects/${q.id}`} className="press flex items-center gap-3 p-3 hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
                     <span className="flex-1">
                       <span className="block font-medium">{q.title}</span>
                       <span className="text-sm text-muted-foreground">{q.org} · {q.tier} · submitted {q.since.toISOString().slice(0, 10)}</span>

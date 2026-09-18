@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, CircleCheck, Clock, Lock, Sparkles, Users } from "lucide-react";
+import { Bookmark, BookmarkCheck, CircleCheck, Clock, Lock, Users } from "lucide-react";
 import { checkEligibility, type Brief, type Tier } from "@iq/core";
 import { toggleSave } from "@/app/explore/actions";
 import { COMP } from "@/components/brief-view";
@@ -28,7 +28,7 @@ export function ProjectCard({ c, names, tiers, back }: { c: CardData; names: Rec
   const avail = availability(c.state, c.openPlaces, c.b.capacity);
   const missing = c.fit ? checkEligibility(c.b.prerequisites, tiers).missing : [];
   return (
-    <Card className="relative flex flex-col transition-colors hover:border-primary/40">
+    <Card className="lift relative flex flex-col hover:border-primary/40">
       <CardHeader>
         <CardDescription className="flex items-center justify-between gap-2">
           <span className="truncate">{c.org}</span>
@@ -54,7 +54,7 @@ export function ProjectCard({ c, names, tiers, back }: { c: CardData; names: Rec
         )}
         {c.fit && missing.length === 0 && c.fit.reasons.length > 0 && (
           <ul className="grid gap-1 text-muted-foreground">
-            {c.fit.reasons.slice(0, 2).map((r) => <li key={r} className="flex items-start gap-1.5"><Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />{r}</li>)}
+            {c.fit.reasons.slice(0, 2).map((r) => <li key={r} className="flex items-baseline gap-2"><span className="size-1.5 shrink-0 translate-y-[-2px] rounded-full bg-primary" aria-hidden />{r}</li>)}
           </ul>
         )}
       </CardContent>

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { ArrowRight, Users } from "lucide-react";
-import { enrollments, user, type Db } from "@iq/db";
+import { enrollments, skillClaims, skills, user, type Db } from "@iq/db";
+import { Badge } from "@/components/ui/badge";
+import { studentTiers } from "@/server/discovery";
+import { CLAIM_LEVELS } from "@/server/profile";
 import { Button, EnrollmentBadge, when } from "@/components/ui";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +19,11 @@ export async function Applicants({ db, projectId, capacity, openPlaces }: { db: 
     .innerJoin(user, eq(user.id, enrollments.studentId))
     .where(eq(enrollments.projectId, projectId)).orderBy(asc(enrollments.createdAt));
   const waiting = rows.filter((r) => r.e.state === "applied");
+  const names = Object.fromEntries((await db.select().from(skills)).map((k) => [k.id, k.name]));
+  const skillsOf = Object.fromEntries(await Promise.all(waiting.map(async ({ e }) => [e.studentId, {
+    verified: Object.entries(await studentTiers(db, e.studentId)).filter(([, t]) => t !== "none"),
+    claimed: await db.select().from(skillClaims).where(eq(skillClaims.userId, e.studentId)),
+  }] as const)));
   const people = rows.filter((r) => ["offered", "active", "submitted", "revision_requested", "completed"].includes(r.e.state));
   const past = rows.filter((r) => ["declined", "withdrawn", "offer_declined", "offer_expired", "closed_incomplete"].includes(r.e.state));
   return (
@@ -34,6 +42,11 @@ export async function Applicants({ db, projectId, capacity, openPlaces }: { db: 
               </div>
               <p className="text-sm">{e.motivation}</p>
               {e.availability && <p className="text-sm text-muted-foreground">Availability: {e.availability}</p>}
+              <div className="flex flex-wrap gap-1.5">
+                {skillsOf[e.studentId].verified.map(([id, t]) => <Badge key={id}>{names[id]}: {t === "bronze" ? "Bronze" : "Emerging"} (verified)</Badge>)}
+                {skillsOf[e.studentId].claimed.map((c) => <Badge key={c.skillId} variant="outline">{names[c.skillId]} · {CLAIM_LEVELS[c.level].toLowerCase()} (self-reported)</Badge>)}
+                {!skillsOf[e.studentId].verified.length && !skillsOf[e.studentId].claimed.length && <span className="text-sm text-muted-foreground">No skills listed yet. Beginners are welcome on this brief if it says so.</span>}
+              </div>
               <div className="flex flex-wrap items-end gap-2">
                 <form action={offerAction}>
                   <input type="hidden" name="projectId" value={projectId} />

@@ -79,7 +79,7 @@ export default async function Quests({ searchParams }: PageProps<"/quests">) {
               <input type="hidden" name="enrollmentId" value={r.e.id} />
               <CheckField name="agreed" label="I've read the brief, rubric and terms, and I agree to them." />
             </CardContent>
-            <CardFooter className="mt-4 gap-2">
+            <CardFooter className="mt-4 flex-wrap gap-2">
               <Button name="decision" value="accept">Accept offer</Button>
               <Button name="decision" value="decline" variant="outline">Decline</Button>
               <Button asChild variant="ghost"><Link href={`/projects/${r.e.projectId}`}>Read the brief again</Link></Button>
@@ -89,12 +89,12 @@ export default async function Quests({ searchParams }: PageProps<"/quests">) {
       ))}
 
       <Tabs defaultValue={active.length ? "active" : applied.length ? "applied" : "done"}>
-        <TabsList>
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><TabsList className="w-max">
           <TabsTrigger value="active">In progress ({active.length})</TabsTrigger>
           <TabsTrigger value="applied">Applications ({applied.length})</TabsTrigger>
           <TabsTrigger value="done">Completed ({done.length})</TabsTrigger>
           <TabsTrigger value="closed">Closed ({closed.length})</TabsTrigger>
-        </TabsList>
+        </TabsList></div>
         <TabsContent value="active" className="mt-4 grid gap-4">
           {active.map((r) => (
             <Row key={r.e.id} r={r}>

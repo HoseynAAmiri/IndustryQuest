@@ -84,6 +84,8 @@ export const memberships = pgTable(
 export const studentProfiles = pgTable("student_profiles", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
   bio: text("bio").notNull().default(""),
+  pronouns: text("pronouns").notNull().default(""),
+  discipline: text("discipline").notNull().default(""),
   interests: text("interests").array().notNull().default(sql`'{}'::text[]`),
   goals: text("goals").notNull().default(""),
   weeklyHours: integer("weekly_hours").notNull().default(0),
@@ -95,6 +97,22 @@ export const skills = pgTable("skills", {
   id: text("id").primaryKey(), // slug, e.g. "signal-analysis"
   name: text("name").notNull(),
 });
+
+// PRO-02: what the student says they can do. Never platform-verified and never used for eligibility;
+// verified tiers come only from skill_evidence.
+export const skillClaimLevel = pgEnum("skill_claim_level", ["learning", "coursework", "practical"]);
+
+export const skillClaims = pgTable(
+  "skill_claims",
+  {
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    skillId: text("skill_id").notNull().references(() => skills.id),
+    level: skillClaimLevel("level").notNull(),
+    note: text("note").notNull().default(""),
+    createdAt: created(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.skillId] })],
+);
 
 // ── Projects and immutable brief versions ──
 

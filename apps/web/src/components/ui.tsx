@@ -87,7 +87,7 @@ export function Page({ title, description, children, back, actions, narrow }: {
   actions?: ReactNode; narrow?: boolean;
 }) {
   return (
-    <div className={`mx-auto w-full px-4 py-8 sm:py-10 ${narrow ? "max-w-md" : "max-w-6xl"}`}>
+    <div className={`mx-auto w-full px-4 py-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300 sm:py-10 ${narrow ? "max-w-md" : "max-w-6xl"}`}>
       {back && (
         <Link href={back.href} className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" /> {back.label}

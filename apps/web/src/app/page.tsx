@@ -32,7 +32,7 @@ export default async function Home() {
         </div>
         <div className="mt-16 grid gap-4 sm:grid-cols-3">
           {STEPS.map((s) => (
-            <Card key={s.title}>
+            <Card key={s.title} className="lift">
               <CardHeader>
                 <s.icon className="mb-2 size-6 text-primary" aria-hidden />
                 <CardTitle>{s.title}</CardTitle>

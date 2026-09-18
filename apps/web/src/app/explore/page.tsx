@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SearchX, SlidersHorizontal } from "lucide-react";
 import { Alert, Button, CheckField, Field, NONE, Page, SelectField, messages } from "@/components/ui";
+import { FilterSheet } from "@/components/filter-sheet";
 import { ProjectCard } from "@/components/project-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/auth";
@@ -26,15 +27,7 @@ export default async function Explore({ searchParams }: PageProps<"/explore">) {
   const filtered = Object.values(f).some(Boolean);
   const here = `/explore?${new URLSearchParams(Object.entries(sp).filter(([, v]) => typeof v === "string") as [string, string][])}`;
 
-  return (
-    <Page title="Explore projects"
-      description={isStudent ? "Sorted by fit: your interests, weekly time and skill evidence. Projects you can't join yet sink to the end."
-        : "Real, scoped projects from partner companies. Sign in to see how each one fits you."}>
-      <div className="mb-4 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
-      <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
-        <Card className="h-fit lg:sticky lg:top-20">
-          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><SlidersHorizontal className="size-4" /> Filters</CardTitle></CardHeader>
-          <CardContent>
+  const filters = (
             <form role="search" className="grid gap-4">
               <Field label="Search" name="q" type="search" defaultValue={f.q} placeholder="Title, company, problem" />
               <SelectField label="Skill" name="skill" defaultValue={f.skill ?? NONE}
@@ -60,13 +53,29 @@ export default async function Explore({ searchParams }: PageProps<"/explore">) {
                 {filtered && <Button asChild variant="outline"><Link href="/explore">Clear</Link></Button>}
               </div>
             </form>
+  );
+  const active = Object.values(f).filter(Boolean).length;
+
+  return (
+    <Page title="Explore projects"
+      description={isStudent ? "Sorted by fit: your interests, weekly time and skill evidence. Projects you can't join yet sink to the end."
+        : "Real, scoped projects from partner companies. Sign in to see how each one fits you."}>
+      <div className="mb-4 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
+        <Card className="hidden h-fit lg:sticky lg:top-20 lg:block">
+          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><SlidersHorizontal className="size-4" /> Filters</CardTitle></CardHeader>
+          <CardContent>
+            {filters}
           </CardContent>
         </Card>
 
         <section aria-labelledby="results">
-          <h2 id="results" className="mb-3 text-sm text-muted-foreground" aria-live="polite">
-            {cards.length} {cards.length === 1 ? "project" : "projects"}{filtered && " match your filters"}
-          </h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 id="results" className="text-sm text-muted-foreground" aria-live="polite">
+              {cards.length} {cards.length === 1 ? "project" : "projects"}{filtered && " match your filters"}
+            </h2>
+            <FilterSheet active={active}>{filters}</FilterSheet>
+          </div>
           {cards.length ? (
             <div className="grid gap-4 md:grid-cols-2">
               {cards.map((c) => <ProjectCard key={c.id} c={c} names={names} tiers={tiers} back={here} />)}

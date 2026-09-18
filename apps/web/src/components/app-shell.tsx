@@ -23,7 +23,8 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
       { href: "/explore", label: "Explore projects", icon: "explore" },
       ...(roles.isStudent ? [
         { href: "/quests", label: "My quests", icon: "quests" as const },
-        { href: "/profile", label: "Profile and skills", icon: "profile" as const },
+        { href: "/profile/skills", label: "My skills", icon: "skills" as const },
+        { href: "/profile", label: "Profile", icon: "profile" as const },
       ] : []),
     ],
   }];

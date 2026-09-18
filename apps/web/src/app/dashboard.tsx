@@ -64,16 +64,16 @@ export async function StudentDashboard({ db, userId }: { db: Db; userId: string 
   return (
     <>
       {offers.map((o) => (
-        <Link key={o.e.id} href="/quests" className="flex items-center gap-3 rounded-xl border border-primary/50 bg-primary/5 p-4 hover:bg-primary/10">
+        <Link key={o.e.id} href="/quests" className="press flex items-center gap-3 rounded-xl border border-primary/50 bg-primary/5 p-4 hover:bg-primary/10">
           <Inbox className="size-5 text-primary" />
           <span className="flex-1"><span className="font-medium">You have an offer: {o.title}</span>
             <span className="block text-sm text-muted-foreground">Reply by {when(o.e.offerExpiresAt, profile.timezone, true)}</span></span>
           <ArrowRight className="size-4" />
         </Link>
       ))}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Link href="/profile" className="rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
-          <Card className="h-full gap-2 py-4">
+          <Card className="lift h-full gap-2 py-4">
             <CardHeader className="px-4">
               <CardDescription className="flex items-center justify-between">Level {p.level}<Trophy className="size-4" /></CardDescription>
               <CardTitle className="text-2xl tabular-nums">{xp} XP</CardTitle>
@@ -92,7 +92,7 @@ export async function StudentDashboard({ db, userId }: { db: Db; userId: string 
         <Section title="Continue where you left off" href="/quests" cta="My quests">
           <div className="grid gap-4 md:grid-cols-2">
             {next.map((n) => (
-              <Card key={n.e.id}>
+              <Card key={n.e.id} className="lift">
                 <CardHeader>
                   <CardTitle className="text-base">{n.title}</CardTitle>
                   <CardDescription className="flex items-center gap-1.5">
@@ -130,7 +130,7 @@ export async function OwnerDashboard({ db, roles }: { db: Db; roles: Roles }) {
   const attention = rows.filter((r) => r.state === "changes_requested" || r.state === "draft");
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Stat label="Applicants waiting" value={applicants.n} icon={Inbox} hint="Open a live brief to review them" />
         <Stat label="Published" value={by("published")} icon={Building2} />
         <Stat label="In staff review" value={by("in_review")} icon={ShieldCheck} />
@@ -142,7 +142,7 @@ export async function OwnerDashboard({ db, roles }: { db: Db; roles: Roles }) {
           <ul className="divide-y">
             {attention.map((r) => (
               <li key={r.id}>
-                <Link href={`/company/projects/${r.id}`} className="flex items-center gap-3 p-4 hover:bg-muted/50">
+                <Link href={`/company/projects/${r.id}`} className="press flex items-center gap-3 p-4 hover:bg-muted/50">
                   <span className="flex-1">
                     <span className="block font-medium">{r.title || "Untitled draft"}</span>
                     <span className="text-sm text-muted-foreground">{r.note ?? r.org}</span>
@@ -169,7 +169,7 @@ export async function MentorDashboard({ db, userId }: { db: Db; userId: string }
   const waiting = mine.filter((m) => m.state === "submitted").length;
   return (
     <Section title="Mentoring" href="/mentor" cta="Open review queue">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="Waiting for your review" value={waiting} icon={ClipboardCheck} hint="Target: feedback within 5 business days" />
         <Stat label="Active mentees" value={mine.length - waiting} icon={Users} />
         <Stat label="Live projects you mentor" value={rows.length} icon={Building2} />
@@ -198,7 +198,7 @@ export async function StaffDashboard({ db }: { db: Db }) {
   ]);
   return (
     <Section title="Program operations" href="/staff" cta="Open staff queue">
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Briefs to review" value={review.n} icon={ClipboardCheck} hint="Quality gate before publishing" />
         <Stat label="Organizations to verify" value={orgs.n} icon={ShieldCheck} />
         <Stat label="Live projects" value={live.n} icon={Building2} />

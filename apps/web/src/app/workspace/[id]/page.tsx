@@ -74,7 +74,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
         {w.e.state === "completed" && (
           <Card className="border-green-600/40 bg-green-50/60 dark:bg-green-950/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base"><PartyPopper className="size-5 text-green-700" /> Accepted on {when(w.e.completedAt, tz)}</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base"><PartyPopper className="size-5 text-green-700 motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:spin-in-12 motion-safe:duration-700" /> Accepted on {when(w.e.completedAt, tz)}</CardTitle>
               <CardDescription>
                 {w.e.rewardsStatus === "issued"
                   ? `You earned ${w.v.xp} XP and a verified completion record.`
@@ -99,13 +99,13 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
 
       <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <Tabs defaultValue={["overview", "discussion", "files", "submissions", "brief"].includes(tab) ? tab : "overview"} className="min-w-0">
-          <TabsList className="flex-wrap">
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><TabsList className="w-max">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="discussion">Discussion ({w.messages.length})</TabsTrigger>
             <TabsTrigger value="files">Files ({w.files.length})</TabsTrigger>
             <TabsTrigger value="submissions">Submissions ({w.submissions.length})</TabsTrigger>
             <TabsTrigger value="brief">Accepted brief</TabsTrigger>
-          </TabsList>
+          </TabsList></div>
 
           <TabsContent value="overview" className="mt-4 grid gap-4">
             <Card>
