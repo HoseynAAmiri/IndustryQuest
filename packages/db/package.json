@@ -1,0 +1,23 @@
+{
+  "name": "@iq/db",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "seed": "node --env-file=../../.env --experimental-strip-types src/seed.ts"
+  },
+  "dependencies": {
+    "@iq/core": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/pg": "^8",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "industryquest",
+  "private": true,
+  "packageManager": "pnpm@12.4.2",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "db:up": "docker start iq-pg 2>/dev/null || docker run -d --name iq-pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=industryquest -v iq-pg:/var/lib/postgresql/data postgres:17",
+    "db:generate": "pnpm --filter @iq/db generate",
+    "db:migrate": "pnpm --filter @iq/db migrate",
+    "db:seed": "pnpm --filter @iq/db seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.2"
+  }
+}
