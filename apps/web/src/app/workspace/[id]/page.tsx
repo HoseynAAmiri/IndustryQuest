@@ -83,7 +83,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
             </CardHeader>
             {isStudent && w.e.rewardsStatus === "issued" && (
               <CardContent className="flex flex-wrap gap-2">
-                <Button asChild size="sm"><Link href="/profile">See your XP and credentials</Link></Button>
+                <Button asChild size="sm"><Link href="/profile?tab=credentials">See your XP and credentials</Link></Button>
                 <Button asChild size="sm" variant="outline"><Link href="/explore">Find your next quest</Link></Button>
               </CardContent>
             )}

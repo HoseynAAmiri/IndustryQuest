@@ -21,11 +21,7 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
     items: [
       { href: "/", label: "Home", icon: "home" },
       { href: "/explore", label: "Explore projects", icon: "explore" },
-      ...(roles.isStudent ? [
-        { href: "/quests", label: "My quests", icon: "quests" as const },
-        { href: "/profile/skills", label: "My skills", icon: "skills" as const },
-        { href: "/profile", label: "Profile", icon: "profile" as const },
-      ] : []),
+      ...(roles.isStudent ? [{ href: "/quests", label: "My quests", icon: "quests" as const }] : []),
     ],
   }];
   if (roles.ownerOf.length) groups.push({ label: "Company", items: [{ href: "/company", label: "Projects", icon: "company" }] });
@@ -41,7 +37,7 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
   return (
     <TooltipProvider delayDuration={0}>
     <SidebarProvider defaultOpen={open}>
-      <AppSidebar groups={groups} user={{ name: user.name, email: user.email }} demo={isDemo()} />
+      <AppSidebar groups={groups} user={{ name: user.name, email: user.email }} demo={isDemo()} hasProfile={roles.isStudent} />
       <SidebarInset id="main">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />

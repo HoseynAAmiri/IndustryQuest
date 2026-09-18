@@ -112,7 +112,7 @@ export async function StudentDashboard({ db, userId }: { db: Db; userId: string 
           {cards.filter((c) => !c.myState).slice(0, 3).map((c) => <ProjectCard key={c.id} c={c} names={names} tiers={tiers} back="/" />)}
         </div>
         <p className="text-sm text-muted-foreground">
-          Suggestions look off? <Link href="/onboarding" className="text-primary underline-offset-4 hover:underline">Update your interests and hours</Link>.
+          Suggestions look off? <Link href="/profile?tab=details" className="text-primary underline-offset-4 hover:underline">Update your interests and hours</Link>.
         </p>
       </Section>
     </>
