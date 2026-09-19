@@ -52,7 +52,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
   const [saved] = profile ? await db.select().from(savedProjects).where(and(eq(savedProjects.userId, session!.user.id), eq(savedProjects.projectId, id))) : [];
 
   return (
-    <Page title={b.title} description={org.name} back={{ href: "/explore", label: "Explore projects" }}
+    <Page title={b.title} description={<Link href={`/companies/${org.id}`} className="hover:underline">{org.name}{org.verifiedAt && " · verified"}</Link>} back={{ href: "/explore", label: "Explore projects" }}
       actions={insider && project.state !== "published" ? <Badge variant="secondary">Preview: {project.state.replace("_", " ")}</Badge> : undefined}>
       <div className="mb-4 grid gap-3"><Alert>{error}</Alert></div>
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">

@@ -39,6 +39,9 @@ export default async function Verify({ params }: PageProps<"/credentials/[id]">)
         </CardHeader>
         <CardContent className="grid gap-5 border-t pt-5 text-sm">
           <p>{c.c.summary}</p>
+          {c.c.summaryStatus === "approved" && c.c.proposedSummary && (
+            <div><p className="text-muted-foreground">Contribution, in the student's words (approved by the company)</p><p>{c.c.proposedSummary}</p></div>
+          )}
           <dl className="grid gap-3 sm:grid-cols-2">
             {c.project && <div><dt className="text-muted-foreground">Project</dt><dd className="font-medium">{c.project} ({c.tier})</dd></div>}
             {c.org && <div><dt className="text-muted-foreground">Company</dt><dd className="font-medium">{c.org}</dd></div>}

@@ -109,7 +109,7 @@ export async function StudentDashboard({ db, userId }: { db: Db; userId: string 
       )}
       <Section title="Recommended for you" description="Chosen from your interests, weekly time and skill evidence." href="/explore" cta="Explore all">
         <div className="grid gap-4 md:grid-cols-3">
-          {cards.filter((c) => !c.myState).slice(0, 3).map((c) => <ProjectCard key={c.id} c={c} names={names} tiers={tiers} back="/" />)}
+          {cards.filter((c) => !c.myState && !c.dismissed).slice(0, 3).map((c) => <ProjectCard key={c.id} c={c} names={names} tiers={tiers} back="/" dismissable />)}
         </div>
         <p className="text-sm text-muted-foreground">
           Suggestions look off? <Link href="/profile?tab=details" className="text-primary underline-offset-4 hover:underline">Update your interests and hours</Link>.

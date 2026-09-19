@@ -28,7 +28,9 @@ export function makeAuth(db: Db) {
       sendVerificationEmail: ({ user, url }) =>
         sendEmail(user.email, "Confirm your IndustryQuest email", `Open this link to confirm your email address:\n${url}`),
     },
-    user: { additionalFields: { isStaff: { type: "boolean", input: false, defaultValue: false } } },
+    // ACC-05, AC-16: moving from a university address to a personal one. The link goes to the new address,
+    // and the switch happens only when it's opened.
+    user: { additionalFields: { isStaff: { type: "boolean", input: false, defaultValue: false } }, changeEmail: { enabled: true } },
     plugins: [nextCookies()],
   });
 }

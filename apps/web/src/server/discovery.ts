@@ -1,7 +1,7 @@
 import { and, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { SEAT_STATES, explainFit, tierFor, type Tier } from "@iq/core";
 import {
-  briefVersions, enrollments, equivalencies, organizations, projects, savedProjects, skillEvidence, skills, studentProfiles, user, type Db, type Tx,
+  briefVersions, dismissedProjects, enrollments, equivalencies, organizations, projects, savedProjects, skillEvidence, skills, studentProfiles, user, type Db, type Tx,
 } from "@iq/db";
 import type { Actor } from "./authz";
 import { UserError } from "./errors";
@@ -83,6 +83,9 @@ export async function listProjects(db: Db, viewer: Actor | null, f: Filters) {
         .where(and(eq(enrollments.studentId, viewer.id), inArray(enrollments.state, ["applied", "offered", "active", "submitted", "revision_requested", "completed"]))))
         .map((m) => [m.id, m.state])
     : []);
+  const dismissed = new Set(viewer
+    ? (await db.select({ id: dismissedProjects.projectId }).from(dismissedProjects).where(eq(dismissedProjects.userId, viewer.id))).map((d) => d.id)
+    : []);
   const saved = new Set(viewer
     ? (await db.select({ id: savedProjects.projectId }).from(savedProjects).where(eq(savedProjects.userId, viewer.id))).map((s) => s.id)
     : []);
@@ -96,7 +99,7 @@ export async function listProjects(db: Db, viewer: Actor | null, f: Filters) {
           { text: `${b.title} ${b.summary}`, skills: b.skillIds.map((id) => ({ id, name: names[id] ?? id })), effortHours: b.effortHours, beginner: b.beginner, prerequisites: b.prerequisites },
         )
       : null;
-    return { ...r, b, openPlaces, fit, saved: saved.has(r.id), myState: mine.get(r.id) ?? null };
+    return { ...r, b, openPlaces, fit, saved: saved.has(r.id), myState: mine.get(r.id) ?? null, dismissed: dismissed.has(r.id) };
   }).filter((c) => !f.openOnly || (c.state === "published" && c.openPlaces > 0));
 
   // For students: eligible, open projects with the best fit first (§11.2). Everyone else: newest first.

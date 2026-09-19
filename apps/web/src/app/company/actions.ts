@@ -6,6 +6,8 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { UserError } from "@/server/errors";
 import { makeOffer, reject } from "@/server/enrollments";
+import { addMember, removeMember, transferProject } from "@/server/company";
+import { reviewSummary } from "@/server/credentials";
 import { confirmMentoring, reviseBrief, saveDraft, setListingState, submitForReview } from "@/server/projects";
 
 const ROWS = 5;
@@ -90,4 +92,26 @@ export async function listingAction(form: FormData) {
 export async function confirmMentoringAction(form: FormData) {
   const user = await requireUser();
   await act("/mentor", () => confirmMentoring(getDb(), user, s(form, "projectId")), { info: "Thanks. The company can now submit the brief." });
+}
+
+export async function addMemberAction(form: FormData) {
+  const user = await requireUser();
+  await act("/company/team", () => addMember(getDb(), user, { orgId: s(form, "orgId"), email: s(form, "email"), role: s(form, "role") as "owner" | "mentor" }), { info: "Added. They've been notified." });
+}
+
+export async function removeMemberAction(form: FormData) {
+  const user = await requireUser();
+  await act("/company/team", () => removeMember(getDb(), user, { orgId: s(form, "orgId"), userId: s(form, "userId"), role: s(form, "role") as "owner" | "mentor" }), { info: "Access removed. Their account and past work are untouched." });
+}
+
+export async function transferAction(form: FormData) {
+  const user = await requireUser();
+  await act("/company/team", () => transferProject(getDb(), user, { projectId: s(form, "projectId"), newOwnerId: s(form, "newOwnerId") }), { info: "Project transferred." });
+}
+
+export async function summaryReviewAction(form: FormData) {
+  const user = await requireUser();
+  const approve = form.get("decision") === "approve";
+  await act("/company#portfolio", () => reviewSummary(getDb(), user, { credentialId: s(form, "credentialId"), approve, note: s(form, "note") }),
+    { info: approve ? "Approved. It can now appear on the student's public pages." : "Sent back to the student." });
 }

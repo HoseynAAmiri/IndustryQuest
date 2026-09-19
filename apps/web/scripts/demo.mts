@@ -6,7 +6,8 @@ import { briefVersions, connect, credentials, files, projects, savedProjects, su
 import { apply, expireStaleOffers, makeOffer, reject, respondToOffer, withdraw } from "../src/server/enrollments";
 import { assess } from "../src/server/review";
 import { addLink, postMessage, submit, toggleMilestone } from "../src/server/workspace";
-import { setCredentialPublic } from "../src/server/credentials";
+import { proposeSummary, reviewSummary, setCredentialPublic } from "../src/server/credentials";
+import { setVisibility } from "../src/server/profile";
 import { reviseBrief } from "../src/server/projects";
 import { briefSchema } from "@iq/core";
 import { addCaseUpdate, openCase, resolveCase } from "../src/server/cases";
@@ -218,6 +219,18 @@ await grantEquivalency(db, sam, { userId: jonas.id, skillId: "signal-analysis", 
   const c = await openCase(db, dev, { type: "equivalency", skillId: "data-cleaning",
     summary: "I worked 18 months as a part-time data assistant cleaning sports datasets. My manager can confirm and I can share samples." });
   await db.execute(sql`update cases set created_at = now() - interval '2 days', due_at = now() + interval '3 days' where id = ${c.id}`);
+}
+
+// ── Sharing and portfolio summaries (PRO-04, CRD-03) ──
+{
+  const completion = async (userId: string) => (await db.execute<{ id: string }>(sql`select id from credentials where user_id = ${userId} and kind = 'completion' order by created_at limit 1`)).rows[0].id;
+  await setVisibility(db, ada, { visibility: "link" });
+  await setVisibility(db, mei, { visibility: "public" });
+  await proposeSummary(db, ada, { credentialId: await completion(ada.id),
+    summary: "I detrended and windowed three axes of accelerometer data, identified the 1x and 3x running-speed peaks, and explained why the 3x peak pointed to early bearing wear." });
+  const meiCred = await completion(mei.id);
+  await proposeSummary(db, mei, { credentialId: meiCred, summary: "I analysed a week of pump vibration data and traced the dominant harmonic to the bearing, with a reproducible notebook." });
+  await reviewSummary(db, olive, { credentialId: meiCred, approve: true, note: "" });
 }
 
 await expireStaleOffers(db);

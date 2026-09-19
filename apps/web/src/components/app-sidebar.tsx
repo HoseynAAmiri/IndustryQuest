@@ -14,7 +14,7 @@ import {
   SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarRail,
 } from "@/components/ui/sidebar";
 
-const ICONS = { home: House, explore: Compass, quests: Target,  company: Building2, mentor: ClipboardCheck, staff: ShieldCheck, cases: Inbox, students: GraduationCap, reports: BarChart3, audit: History };
+const ICONS = { home: House, explore: Compass, quests: Target,  company: Building2, mentor: ClipboardCheck, staff: ShieldCheck, team: Users, cases: Inbox, students: GraduationCap, reports: BarChart3, audit: History };
 export type NavGroup = { label: string; items: { href: string; label: string; icon: keyof typeof ICONS; badge?: number }[] };
 
 const initials = (name: string) => name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();

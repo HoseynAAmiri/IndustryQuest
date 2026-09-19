@@ -108,6 +108,9 @@ export const studentProfiles = pgTable("student_profiles", {
   participation: text("participation", { enum: ["remote", "hybrid", "onsite", "any"] }).notNull().default("remote"), // ACC-03
   extraActiveSlots: integer("extra_active_slots").notNull().default(0), // ENR-07 staff exception
   extraSlotsReason: text("extra_slots_reason"),
+  // PRO-04, AC-19: private by default; a link works only while its token is current.
+  visibility: text("visibility", { enum: ["private", "link", "public"] }).notNull().default("private"),
+  shareToken: text("share_token").unique(),
   createdAt: created(),
 });
 
@@ -172,6 +175,17 @@ export const briefVersions = pgTable(
 
 export const savedProjects = pgTable(
   "saved_projects",
+  {
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    createdAt: created(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.projectId] })],
+);
+
+// DIS-04: "not for me" hides a project from recommendations (Explore still shows it).
+export const dismissedProjects = pgTable(
+  "dismissed_projects",
   {
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
@@ -314,6 +328,11 @@ export const credentials = pgTable("credentials", {
   status: text("status", { enum: ["active", "revoked", "superseded"] }).notNull().default("active"),
   summary: text("summary").notNull().default(""), // the only project detail a public page shows
   isPublic: boolean("is_public").notNull().default(false),
+  publicUntil: timestamp("public_until", { withTimezone: true }), // CRD-06: optional expiry of the public link
+  // CRD-01/03: the student's own account of their contribution; public only after the company approves it.
+  proposedSummary: text("proposed_summary"),
+  summaryStatus: text("summary_status", { enum: ["none", "pending", "approved", "declined"] }).notNull().default("none"),
+  summaryReviewedBy: text("summary_reviewed_by").references(() => user.id),
   idempotencyKey: text("idempotency_key").notNull().unique(),
   issuedAt: created(),
 });

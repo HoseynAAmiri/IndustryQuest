@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bookmark, BookmarkCheck, CircleCheck, Clock, Lock, Users } from "lucide-react";
 import { checkEligibility, type Brief, type Tier } from "@iq/core";
-import { toggleSave } from "@/app/explore/actions";
+import { dismissAction, toggleSave } from "@/app/explore/actions";
 import { COMP } from "@/components/brief-view";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export function availability(state: string, openPlaces: number, capacity: number
   return { label: `${openPlaces} of ${capacity} ${capacity === 1 ? "place" : "places"} open`, tone: "default" as const };
 }
 
-export function ProjectCard({ c, names, tiers, back }: { c: CardData; names: Record<string, string>; tiers: Record<string, Tier>; back: string }) {
+export function ProjectCard({ c, names, tiers, back, dismissable }: { c: CardData; names: Record<string, string>; tiers: Record<string, Tier>; back: string; dismissable?: boolean }) {
   const avail = availability(c.state, c.openPlaces, c.b.capacity);
   const missing = c.fit ? checkEligibility(c.b.prerequisites, tiers).missing : [];
   return (
@@ -63,6 +63,12 @@ export function ProjectCard({ c, names, tiers, back }: { c: CardData; names: Rec
           {avail.tone === "default" ? <CircleCheck className="size-4 text-green-600" /> : <Users className="size-4 text-muted-foreground" />}
           {avail.label}
         </span>}
+        {dismissable && (
+          <form action={dismissAction} className="ml-auto">
+            <input type="hidden" name="projectId" value={c.id} />
+            <Button variant="ghost" size="sm" className="text-muted-foreground">Not for me</Button>
+          </form>
+        )}
         {c.fit && (
           <form action={toggleSave}>
             <input type="hidden" name="projectId" value={c.id} />

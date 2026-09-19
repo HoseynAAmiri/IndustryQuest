@@ -28,7 +28,10 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
       ...(roles.isStudent ? [{ href: "/quests", label: "My quests", icon: "quests" as const }] : []),
     ],
   }];
-  if (roles.ownerOf.length) groups.push({ label: "Company", items: [{ href: "/company", label: "Projects", icon: "company" }] });
+  if (roles.ownerOf.length) groups.push({ label: "Company", items: [
+    { href: "/company", label: "Projects", icon: "company" },
+    { href: "/company/team", label: "Team", icon: "team" },
+  ] });
   if (roles.mentorOf.length) groups.push({ label: "Mentoring", items: [{ href: "/mentor", label: "Review queue", icon: "mentor" }] });
   if (roles.isStaff) {
     const [[briefs], [orgs]] = await Promise.all([
