@@ -18,6 +18,8 @@ test("transitions allow the core loop and reject everything else", () => {
   s = nextEnrollment(s, "submit");
   expect(nextEnrollment(s, "complete")).toBe("completed");
   expect(() => nextEnrollment("completed", "complete")).toThrow();
+  expect(nextEnrollment("closed_incomplete", "reopen")).toBe("revision_requested");
+  expect(() => nextEnrollment("completed", "reopen")).toThrow();
   expect(() => nextEnrollment("applied", "acceptOffer")).toThrow();
   expect(() => nextListing("draft", "approve")).toThrow();
   expect(nextListing(nextListing("draft", "submitForReview"), "approve")).toBe("published");

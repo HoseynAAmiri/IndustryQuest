@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Building2, ChevronsUpDown, ClipboardCheck, Compass, House, LogOut, ShieldCheck, Target, UserRound, Users,
+  Building2, ChevronsUpDown, ClipboardCheck, Compass, House, Inbox, LifeBuoy, LogOut, ShieldCheck, Target, UserRound, Users,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,7 +14,7 @@ import {
   SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarRail,
 } from "@/components/ui/sidebar";
 
-const ICONS = { home: House, explore: Compass, quests: Target,  company: Building2, mentor: ClipboardCheck, staff: ShieldCheck };
+const ICONS = { home: House, explore: Compass, quests: Target,  company: Building2, mentor: ClipboardCheck, staff: ShieldCheck, cases: Inbox };
 export type NavGroup = { label: string; items: { href: string; label: string; icon: keyof typeof ICONS; badge?: number }[] };
 
 const initials = (name: string) => name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -84,6 +84,7 @@ export function AppSidebar({ groups, user, demo, hasProfile }: { groups: NavGrou
                 {hasProfile && (
                   <DropdownMenuItem asChild><Link href="/profile"><UserRound /> Profile</Link></DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild><Link href="/support"><LifeBuoy /> Support</Link></DropdownMenuItem>
                 {demo && (
                   <DropdownMenuItem asChild><Link href="/sign-in"><Users /> Switch demo persona</Link></DropdownMenuItem>
                 )}

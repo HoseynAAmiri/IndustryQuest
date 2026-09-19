@@ -3,15 +3,15 @@
 const enrollment = {
   applied: { withdraw: "withdrawn", reject: "declined", offer: "offered" },
   offered: { acceptOffer: "active", declineOffer: "offer_declined", expireOffer: "offer_expired", withdraw: "withdrawn" },
-  active: { submit: "submitted", withdraw: "withdrawn" },
+  active: { submit: "submitted", withdraw: "withdrawn", close: "closed_incomplete" },
   submitted: { requestRevision: "revision_requested", complete: "completed", closeIncomplete: "closed_incomplete" },
-  revision_requested: { submit: "submitted", withdraw: "withdrawn" },
+  revision_requested: { submit: "submitted", withdraw: "withdrawn", close: "closed_incomplete" },
   declined: {},
   withdrawn: {},
   offer_declined: {},
   offer_expired: {},
   completed: {},
-  closed_incomplete: {},
+  closed_incomplete: { reopen: "revision_requested" }, // only after a successful appeal (§13.2)
 } as const;
 
 const listing = {

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { skills, studentProfiles } from "@iq/db";
 import { BriefView } from "@/components/brief-view";
-import { Alert, Button, CheckField, EnrollmentBadge, Field, Page, TextArea, messages, when } from "@/components/ui";
+import { Alert, Button, CheckField, EnrollmentBadge, Field, Page, SelectField, TextArea, messages, when } from "@/components/ui";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { issueRewards } from "@/server/rewards";
 import { loadWorkspace } from "@/server/workspace";
+import { openCaseAction } from "@/app/support/actions";
 import { linkAction, messageAction, milestoneAction, submitAction } from "./actions";
 
 export const metadata: Metadata = { title: "Workspace" };
@@ -45,6 +46,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
   const canSubmit = isStudent && (w.e.state === "active" || w.e.state === "revision_requested");
   const lastReview = w.submissions.find((s) => s.a)?.a;
   const done = w.milestones.filter((m) => m.doneAt).length;
+  const decided = w.e.state === "closed_incomplete" || w.e.state === "completed";
   const fileName = Object.fromEntries(w.files.map(({ f }) => [f.id, f.name]));
 
   const timeline = [
@@ -301,13 +303,29 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
               <p className="text-muted-foreground">Replies to questions within two business days; reviews within five.</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-base"><LifeBuoy className="size-4" /> Stuck or worried?</CardTitle></CardHeader>
-            <CardContent className="grid gap-2 text-sm text-muted-foreground">
-              <p>Blocked by missing data, need more time, or something feels wrong? Tell the backup contact privately.</p>
-              <p className="font-medium text-foreground">{w.v.content.backupContact}</p>
-            </CardContent>
-          </Card>
+          {isStudent && (
+            <Card>
+              <form action={openCaseAction}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base"><LifeBuoy className="size-4" /> {decided ? "Disagree with the decision?" : "Stuck or worried?"}</CardTitle>
+                  <CardDescription>
+                    {decided ? "Appeal privately. Someone who wasn't part of the decision reviews it." : "Goes privately to program staff, not to the company or your mentor. It never counts against you."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 pt-4">
+                  <input type="hidden" name="enrollmentId" value={id} />
+                  {decided ? <input type="hidden" name="type" value="appeal" /> : (
+                    <SelectField label="What's going on?" name="type" defaultValue="blocker"
+                      options={[{ value: "blocker", label: "I'm blocked" }, { value: "extension", label: "I need more time" }, { value: "conduct", label: "A problem with the company or mentor" }]} />
+                  )}
+                  {!decided && <Field label="Extra days needed (for more time)" name="requestedDays" type="number" min={1} max={30} placeholder="7" />}
+                  <TextArea label="Details" name="summary" rows={3} required minLength={10} />
+                  <Button size="sm" variant="secondary" className="justify-self-start">{decided ? "Send appeal" : "Send privately"}</Button>
+                  <p className="text-xs text-muted-foreground">Backup contact: {w.v.content.backupContact}</p>
+                </CardContent>
+              </form>
+            </Card>
+          )}
           <Card>
             <CardHeader><CardTitle className="text-base">Reward</CardTitle></CardHeader>
             <CardContent className="text-sm text-muted-foreground">

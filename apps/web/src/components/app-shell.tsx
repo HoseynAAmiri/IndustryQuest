@@ -10,6 +10,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getRoles } from "@/server/authz";
 import { getDb } from "@/server/db";
+import { openCaseCount } from "@/server/cases";
 import { isDemo } from "@/server/demo";
 import { AppSidebar, type NavGroup } from "./app-sidebar";
 import { DemoBadge } from "./public-header";
@@ -34,7 +35,10 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
       db.select({ n: count() }).from(projects).where(eq(projects.state, "in_review")),
       db.select({ n: count() }).from(organizations).where(isNull(organizations.verifiedAt)),
     ]);
-    groups.push({ label: "Operations", items: [{ href: "/staff", label: "Staff queue", icon: "staff", badge: briefs.n + orgs.n }] });
+    groups.push({ label: "Operations", items: [
+      { href: "/staff", label: "Staff queue", icon: "staff", badge: briefs.n + orgs.n },
+      { href: "/staff/cases", label: "Cases", icon: "cases", badge: await openCaseCount(db) },
+    ] });
   }
   const open = (await cookies()).get("sidebar_state")?.value !== "false";
   const [{ n: unread }] = await db.select({ n: count() }).from(notifications).where(and(eq(notifications.userId, user.id), isNull(notifications.readAt)));

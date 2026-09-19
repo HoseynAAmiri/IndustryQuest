@@ -339,3 +339,35 @@ export const auditEvents = pgTable("audit_events", {
   meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: created(),
 });
+
+// ── Cases: blockers, extensions, reports, support and appeals (WRK-06, OPS-02/03/09/13, ASM-08) ──
+// Private to the reporter and staff. Opening one never changes the student's record by itself.
+
+export const caseType = pgEnum("case_type", ["blocker", "extension", "conduct", "support", "appeal"]);
+export const caseStatus = pgEnum("case_status", ["open", "in_progress", "resolved"]);
+
+export const cases = pgTable("cases", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  number: integer("number").generatedAlwaysAsIdentity({ startWith: 1001 }).notNull().unique(), // ticket reference
+  type: caseType("type").notNull(),
+  status: caseStatus("status").notNull().default("open"),
+  reporterId: text("reporter_id").notNull().references(() => user.id),
+  enrollmentId: uuid("enrollment_id").references(() => enrollments.id),
+  summary: text("summary").notNull(),
+  requestedDays: integer("requested_days"),
+  ownerId: text("owner_id").references(() => user.id),
+  dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+  resolution: text("resolution"),
+  resolvedBy: text("resolved_by").references(() => user.id),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: created(),
+  updatedAt: updated(),
+});
+
+export const caseUpdates = pgTable("case_updates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  caseId: uuid("case_id").notNull().references(() => cases.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => user.id),
+  body: text("body").notNull(),
+  createdAt: created(),
+});

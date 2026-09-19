@@ -7,12 +7,13 @@ import { apply, expireStaleOffers, makeOffer, reject, respondToOffer, withdraw }
 import { assess } from "../src/server/review";
 import { addLink, postMessage, submit, toggleMilestone } from "../src/server/workspace";
 import { setCredentialPublic } from "../src/server/credentials";
+import { addCaseUpdate, openCase, resolveCase } from "../src/server/cases";
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed a production database.");
 const db = connect(process.env.DATABASE_URL!);
 const as = (id: string) => ({ id });
 const [ada, mei, lucia, omar, amara, jonas, dev] = ["u-student", "s-mei", "s-lucia", "s-omar", "s-amara", "s-jonas", "s-dev"].map(as);
-const [olive, kofi, mina, theo] = ["u-owner", "u-owner2", "u-mentor", "u-mentor2"].map(as);
+const [olive, kofi, mina, theo, sam] = ["u-owner", "u-owner2", "u-mentor", "u-mentor2", "u-staff"].map(as);
 
 const ids = Object.fromEntries((await db.select({ id: projects.id, title: briefVersions.title }).from(projects)
   .innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId))).map((r) => [r.title, r.id]));
@@ -174,6 +175,32 @@ await db.insert(savedProjects).values([{ userId: ada.id, projectId: P.forecast }
   await assess(db, mina, { submissionId: s, scores: scores(1, 1), decision: "not_complete", comment: "The findings don't reference the accessibility brief and no fixes are proposed. The project ended before a revision could be arranged; talk to staff if you'd like to appeal or retry." });
   await back(e, 6); // Closed, not completed
 }
+// ── Cases: one of each kind, open and resolved ──
+const enrollmentOf = async (student: string, project: string) =>
+  (await db.execute<{ id: string }>(sql`select id from enrollments where student_id = ${student} and project_id = ${project} order by created_at desc limit 1`)).rows[0].id;
+{
+  const c = await openCase(db, omar, { type: "extension", enrollmentId: await enrollmentOf(omar.id, P.vibration), requestedDays: 5,
+    summary: "I have two exams next week. Could I have five more days for the revision?" });
+  await db.execute(sql`update cases set created_at = now() - interval '1 day', due_at = now() + interval '4 days' where id = ${c.id}`);
+}
+{
+  const c = await openCase(db, amara, { type: "appeal", enrollmentId: await enrollmentOf(amara.id, P.dashboard),
+    summary: "The brief's accessibility checklist link was broken, so I used WCAG directly. I think that's why my findings didn't cite the brief." });
+  await db.execute(sql`update cases set created_at = now() - interval '6 days', due_at = now() - interval '1 day' where id = ${c.id}`); // overdue
+}
+{
+  const e = await enrollmentOf(ada.id, P.retail);
+  const c = await openCase(db, ada, { type: "blocker", enrollmentId: e, summary: "The sales export is missing the store region column mentioned in the brief." });
+  await addCaseUpdate(db, sam, { caseId: c.id, body: "Thanks Ada. I've asked Kofi for the full export." });
+  await resolveCase(db, sam, { caseId: c.id, resolution: "Kofi uploaded the full export with regions on the Files tab. No change to your deadlines was needed.", action: { kind: "none" } });
+  await db.execute(sql`update cases set created_at = now() - interval '2 days', resolved_at = now() - interval '1 day' where id = ${c.id}`);
+}
+{
+  const c = await openCase(db, lucia, { type: "support", summary: "I changed universities. Can I keep my account with my personal email?" });
+  await resolveCase(db, sam, { caseId: c.id, resolution: "Yes. Your account and records belong to you, not the university. Change your email from Profile, Details.", action: { kind: "none" } });
+  await db.execute(sql`update cases set created_at = now() - interval '12 days', resolved_at = now() - interval '11 days' where id = ${c.id}`);
+}
+
 await expireStaleOffers(db);
 
 // Anything older than three days has been seen already.
