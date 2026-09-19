@@ -21,13 +21,18 @@ import { getDb } from "@/server/db";
 import { issueRewards } from "@/server/rewards";
 import { loadWorkspace } from "@/server/workspace";
 import { openCaseAction } from "@/app/support/actions";
-import { linkAction, messageAction, milestoneAction, scopeAction, submitAction } from "./actions";
+import { draftAction, linkAction, messageAction, milestoneAction, scopeAction, submitAction } from "./actions";
+import { UnsavedGuard } from "@/components/unsaved-guard";
 
 export const metadata: Metadata = { title: "Workspace" };
 
 const initials = (n: string) => n.split(" ").map((p) => p[0]).slice(0, 2).join("");
 const size = (n: number | null) => (n == null ? "" : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.ceil(n / 1e3)} KB`);
 const DECISION = { accept: "Accepted", revise: "Revision requested", not_complete: "Not completed" } as const;
+
+// WRK-04: highlight @mentions in message text.
+const withMentions = (text: string) =>
+  text.split(/(@[A-Z][\p{L}-]+(?: [A-Z][\p{L}-]+)?)/u).map((part, i) => (part.startsWith("@") ? <strong key={i} className="text-primary">{part}</strong> : part));
 
 export default async function Workspace({ params, searchParams }: PageProps<"/workspace/[id]">) {
   const me = await requireUser();
@@ -113,6 +118,10 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                   : "Review accepted. Credentials are being issued; refresh in a moment."}
               </CardDescription>
             </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Closeout: your accepted version, feedback and credentials are kept for good. Company files move to read-only for the project team.
+              You can show what your portfolio rules allow{w.v.content.portfolioRules ? `: ${w.v.content.portfolioRules}` : "."}
+            </CardContent>
             {isStudent && w.e.rewardsStatus === "issued" && (
               <CardContent className="flex flex-wrap gap-2">
                 <Button asChild size="sm"><Link href="/profile?tab=credentials">See your XP and credentials</Link></Button>
@@ -195,7 +204,11 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                       <Avatar className="size-8"><AvatarFallback className="text-xs">{initials(author)}</AvatarFallback></Avatar>
                       <div className="grid gap-1">
                         <p className="text-sm"><span className="font-medium">{author}</span> <span className="text-muted-foreground">· {when(m.createdAt, tz, true)}</span></p>
-                        <p className="whitespace-pre-line text-sm">{m.body}</p>
+                        <p className="whitespace-pre-line text-sm">{withMentions(m.body)}</p>
+                        {m.fileId && fileName[m.fileId] && <a href={`/api/files/${m.fileId}`} className="text-sm text-primary underline-offset-4 hover:underline">Attached: {fileName[m.fileId]}</a>}
+                        {m.isQuestion && (m.answeredAt
+                          ? <Badge variant="outline" className="justify-self-start">Question · answered</Badge>
+                          : <Badge variant="secondary" className="justify-self-start">Question · waiting for a reply</Badge>)}
                       </div>
                     </li>
                   ))}
@@ -204,8 +217,17 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                 <form action={messageAction} className="grid gap-2 border-t pt-4">
                   <input type="hidden" name="enrollmentId" value={id} />
                   <Label htmlFor="body">New message</Label>
-                  <textarea id="body" name="body" rows={3} required className="rounded-md border bg-background p-2 text-sm" />
-                  <Button className="justify-self-end" size="sm"><Send /> Post</Button>
+                  <textarea id="body" name="body" rows={3} required className="rounded-md border bg-background p-2 text-sm"
+                    placeholder={`Type @${w.mentor?.name.split(" ")[0] ?? "Name"} to mention someone`} />
+                  <div className="flex flex-wrap items-end gap-3">
+                    <CheckField name="isQuestion" label="This is a question" />
+                    {w.files.length > 0 && (
+                      <div className="min-w-48"><SelectField label="Attach a project file" name="fileId" placeholder="No attachment"
+                        options={[{ value: "none", label: "No attachment" }, ...w.files.map(({ f }) => ({ value: f.id, label: f.name }))]} /></div>
+                    )}
+                    <UnsavedGuard />
+                    <Button className="ml-auto" size="sm"><Send /> Post</Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -219,18 +241,23 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
               </CardHeader>
               <CardContent className="grid gap-4">
                 <ul className="divide-y rounded-lg border">
-                  {w.files.map(({ f, by }) => (
+                  {w.files.map(({ f, by }) => {
+                    const same = w.files.filter((x) => x.f.name === f.name);
+                    const version = same.length - same.findIndex((x) => x.f.id === f.id);
+                    return (
                     <li key={f.id} className="flex items-center gap-3 p-3 text-sm">
                       {f.url ? <Link2 className="size-4 text-muted-foreground" /> : <FileText className="size-4 text-muted-foreground" />}
                       <span className="flex-1">
-                        <span className="block font-medium">{f.name}</span>
-                        <span className="text-muted-foreground">{by} · {when(f.createdAt, tz)} {f.size ? `· ${size(f.size)}` : "· external link"}</span>
+                        <span className="block font-medium">{f.name}{same.length > 1 && <Badge variant="outline" className="ml-2">v{version}{version === same.length && " · latest"}</Badge>}</span>
+                        {f.description && <span className="block">{f.description}</span>}
+                        <span className="text-muted-foreground">{by} · {when(f.createdAt, tz)} {f.size ? `· ${size(f.size)}` : "· external link"}{f.sha256 && ` · sha256 ${f.sha256.slice(0, 8)}`}</span>
                       </span>
                       <Button asChild variant="ghost" size="icon-sm" aria-label={`Open ${f.name}`}>
                         <a href={`/api/files/${f.id}`}>{f.url ? <ExternalLink /> : <Download />}</a>
                       </Button>
                     </li>
-                  ))}
+                    );
+                  })}
                   {!w.files.length && <li className="p-4 text-sm text-muted-foreground">No files yet.</li>}
                 </ul>
                 {isStudent && canSubmit && (
@@ -239,12 +266,15 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                       <input type="hidden" name="enrollmentId" value={id} />
                       <Label htmlFor="file">Upload a file</Label>
                       <Input id="file" name="file" type="file" required />
+                      <Input name="description" placeholder="What is it? (optional)" aria-label="File description" />
+                      <p className="text-xs text-muted-foreground">Uploading a file with the same name adds a new version; earlier ones stay.</p>
                       <Button size="sm" variant="secondary"><Upload /> Upload</Button>
                     </form>
                     <form action={linkAction} className="grid gap-2 rounded-lg border p-3">
                       <input type="hidden" name="enrollmentId" value={id} />
                       <Field label="Link name" name="name" placeholder="Analysis notebook" />
                       <Field label="URL" name="url" type="url" required placeholder="https://" />
+                      <Field label="Description (optional)" name="description" />
                       <Button size="sm" variant="secondary"><Link2 /> Add link</Button>
                     </form>
                   </div>
@@ -269,9 +299,14 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                       {w.files.map(({ f }) => <CheckField key={f.id} name="fileIds" value={f.id} label={f.name} defaultChecked />)}
                       {!w.files.length && <p className="text-sm text-muted-foreground">Add a file or link on the Files tab first.</p>}
                     </fieldset>
-                    <TextArea label="What you did" name="contribution" required minLength={20} hint="Your contribution in your own words. It appears on your verified record." />
-                    <TextArea label="Reflection (private)" name="reflection" rows={3} hint="What you learned. Only you and your mentor see it." />
-                    <Button className="justify-self-start">Submit for review</Button>
+                    <TextArea label="What you did" name="contribution" required minLength={20} defaultValue={w.e.draftContribution ?? ""}
+                      hint="Your contribution in your own words. It appears on your verified record." />
+                    <TextArea label="Reflection (private)" name="reflection" rows={3} defaultValue={w.e.draftReflection ?? ""} hint="What you learned. Only you and your mentor see it." />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button>Submit for review</Button>
+                      <Button formAction={draftAction} formNoValidate variant="outline">Save draft</Button>
+                      <UnsavedGuard />
+                    </div>
                   </CardContent>
                 </form>
               </Card>

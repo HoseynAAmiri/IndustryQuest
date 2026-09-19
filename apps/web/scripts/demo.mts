@@ -115,6 +115,8 @@ async function hand(student: { id: string }, e: string, name: string, statement:
   await back(e, 1);
   await postMessage(db, mina, { enrollmentId: e, body: "Returns. Keep them, flag them, and note the decision in your log." });
   await back(e, 1);
+  await addLink(db, ada, { enrollmentId: e, name: "Profiling report (draft)", url: "https://example.org/demo/ada/profiling-report-v2", description: "Adds the region breakdown and outlier notes." });
+  await postMessage(db, ada, { enrollmentId: e, isQuestion: true, body: "@Mina Sato should I cap outliers per store or across the whole chain? Per store keeps small shops from looking like outliers." });
 }
 {
   const e = await apply(db, ada, { projectId: P.bearing, motivation: "My vibration project gave me Emerging in Signal analysis and I'd like to compare fault-detection methods next.", availability: "6 hours a week" });

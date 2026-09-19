@@ -57,6 +57,13 @@
       "when": 1789784615659,
       "tag": "0007_jittery_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789785120632,
+      "tag": "0008_melted_rockslide",
+      "breakpoints": true
     }
   ]
 }

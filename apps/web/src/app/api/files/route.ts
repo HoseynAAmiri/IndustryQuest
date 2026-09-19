@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     // Access check runs before anything is stored.
     if ((await enrollmentAccess(db, session.user, enrollmentId)) !== "student") return back("Only the student can add files here.");
     await getCloudflareContext().env.FILES.put(r2Key, buf, { httpMetadata: { contentType: file.type || "application/octet-stream" } });
-    await recordUpload(db, session.user, { enrollmentId, name: file.name.slice(0, 200), r2Key, size: file.size, contentType: file.type, sha256 });
+    await recordUpload(db, session.user, { enrollmentId, name: file.name.slice(0, 200), r2Key, size: file.size, contentType: file.type, sha256, description: String(form.get("description") ?? "").slice(0, 300) });
   } catch (e) {
     if (e instanceof UserError) return back(e.message);
     throw e;

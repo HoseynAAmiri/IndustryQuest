@@ -1,4 +1,4 @@
-import { asc, desc, eq, max } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, max, ne } from "drizzle-orm";
 import { nextEnrollment } from "@iq/core";
 import {
   assessments, briefVersions, enrollments, files, messages, milestones, organizations, projects, submissions, user, type Db,
@@ -53,11 +53,20 @@ export async function loadWorkspace(db: Db, actor: Actor, enrollmentId: string) 
 
 const WORKING = ["active", "revision_requested"];
 
-export async function postMessage(db: Db, actor: Actor, input: { enrollmentId: string; body: string }) {
+export async function postMessage(db: Db, actor: Actor, input: { enrollmentId: string; body: string; isQuestion?: boolean; fileId?: string }) {
   await enrollmentAccess(db, actor, input.enrollmentId);
   const body = input.body.trim();
   if (!body) throw new UserError("Write a message first.");
-  const [m] = await db.insert(messages).values({ enrollmentId: input.enrollmentId, authorId: actor.id, body: body.slice(0, 4000) }).returning();
+  if (input.fileId) {
+    const [f] = await db.select().from(files).where(and(eq(files.id, input.fileId), eq(files.enrollmentId, input.enrollmentId)));
+    if (!f) throw new Forbidden();
+  }
+  // A reply from anyone else answers the open questions in this thread (WRK-04).
+  await db.update(messages).set({ answeredAt: new Date() })
+    .where(and(eq(messages.enrollmentId, input.enrollmentId), eq(messages.isQuestion, true), isNull(messages.answeredAt), ne(messages.authorId, actor.id)));
+  const [m] = await db.insert(messages).values({
+    enrollmentId: input.enrollmentId, authorId: actor.id, body: body.slice(0, 4000), isQuestion: !!input.isQuestion, fileId: input.fileId || null,
+  }).returning();
   const [e] = await db.select().from(enrollments).where(eq(enrollments.id, input.enrollmentId));
   const to = e.studentId === actor.id ? e.mentorId : e.studentId;
   if (to) await notify(db, { userId: to, kind: "message", title: "New message on your project", href: `/workspace/${e.id}?tab=discussion`, key: `msg:${e.id}:${m.id}` });
@@ -70,15 +79,15 @@ export async function toggleMilestone(db: Db, actor: Actor, milestoneId: string)
 }
 
 // INT-01: approved external links (repository, notebook, drive) instead of importing account data.
-export async function addLink(db: Db, actor: Actor, input: { enrollmentId: string; name: string; url: string }) {
+export async function addLink(db: Db, actor: Actor, input: { enrollmentId: string; name: string; url: string; description?: string }) {
   if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
   let url: URL;
   try { url = new URL(input.url.trim()); } catch { throw new UserError("That link isn't a valid URL."); }
   if (url.protocol !== "https:") throw new UserError("Links must start with https://");
-  await db.insert(files).values({ enrollmentId: input.enrollmentId, uploaderId: actor.id, name: input.name.trim() || url.hostname, url: url.href });
+  await db.insert(files).values({ enrollmentId: input.enrollmentId, uploaderId: actor.id, name: input.name.trim() || url.hostname, url: url.href, description: (input.description ?? "").trim().slice(0, 300) });
 }
 
-export async function recordUpload(db: Db, actor: Actor, input: { enrollmentId: string; name: string; r2Key: string; size: number; contentType: string; sha256: string }) {
+export async function recordUpload(db: Db, actor: Actor, input: { enrollmentId: string; name: string; r2Key: string; size: number; contentType: string; sha256: string; description?: string }) {
   if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
   const [f] = await db.insert(files).values({ ...input, uploaderId: actor.id }).returning();
   return f;
@@ -103,7 +112,7 @@ export async function submit(db: Db, actor: Actor, input: {
       enrollmentId: e.id, version: (v ?? 0) + 1, fileIds: input.fileIds, clientKey: input.clientKey,
       contributionStatement: input.contributionStatement.trim().slice(0, 4000), reflection: input.reflection.trim().slice(0, 4000),
     }).returning();
-    await tx.update(enrollments).set({ state: nextEnrollment(e.state, "submit"), updatedAt: new Date() }).where(eq(enrollments.id, e.id));
+    await tx.update(enrollments).set({ state: nextEnrollment(e.state, "submit"), draftContribution: null, draftReflection: null, updatedAt: new Date() }).where(eq(enrollments.id, e.id));
     return { s, e };
   }).then(async ({ s, e }) => {
     await track(db, "submission_created", e.id, actor.id, { version: s.version });
@@ -118,4 +127,11 @@ export async function fileForDownload(db: Db, actor: Actor, fileId: string) {
   if (!f) throw new Forbidden(); // same answer as "no access", so ids can't be probed
   await enrollmentAccess(db, actor, f.enrollmentId);
   return f;
+}
+
+// WRK-05: keep a half-written submission between visits.
+export async function saveSubmissionDraft(db: Db, actor: Actor, input: { enrollmentId: string; contribution: string; reflection: string }) {
+  if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
+  await db.update(enrollments).set({ draftContribution: input.contribution.slice(0, 4000), draftReflection: input.reflection.slice(0, 4000) })
+    .where(eq(enrollments.id, input.enrollmentId));
 }

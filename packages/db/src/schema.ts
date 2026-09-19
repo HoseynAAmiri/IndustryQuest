@@ -219,6 +219,9 @@ export const enrollments = pgTable(
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     rewardsStatus: rewardsStatus("rewards_status").notNull().default("none"),
+    // WRK-05: a submission draft kept between visits.
+    draftContribution: text("draft_contribution"),
+    draftReflection: text("draft_reflection"),
     createdAt: created(),
     updatedAt: updated(),
   },
@@ -242,6 +245,10 @@ export const messages = pgTable("messages", {
   enrollmentId: uuid("enrollment_id").notNull().references(() => enrollments.id, { onDelete: "cascade" }),
   authorId: text("author_id").notNull().references(() => user.id),
   body: text("body").notNull(),
+  // WRK-04: questions stay "waiting" until someone other than the asker replies.
+  isQuestion: boolean("is_question").notNull().default(false),
+  answeredAt: timestamp("answered_at", { withTimezone: true }),
+  fileId: uuid("file_id"), // optional attachment from the project's files
   createdAt: created(),
 });
 
@@ -251,6 +258,7 @@ export const files = pgTable("files", {
   enrollmentId: uuid("enrollment_id").notNull().references(() => enrollments.id, { onDelete: "cascade" }),
   uploaderId: text("uploader_id").notNull().references(() => user.id),
   name: text("name").notNull(),
+  description: text("description").notNull().default(""), // WRK-03
   r2Key: text("r2_key"),
   url: text("url"),
   size: integer("size"),

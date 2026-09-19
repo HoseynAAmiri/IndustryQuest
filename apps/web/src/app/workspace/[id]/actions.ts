@@ -3,14 +3,16 @@ import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { respondToScopeChange } from "@/server/enrollments";
-import { addLink, postMessage, submit, toggleMilestone } from "@/server/workspace";
+import { addLink, postMessage, saveSubmissionDraft, submit, toggleMilestone } from "@/server/workspace";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "");
 const at = (f: FormData, tab: string) => `/workspace/${s(f, "enrollmentId")}${tab && `?tab=${tab}`}`;
 
 export async function messageAction(f: FormData) {
   const u = await requireUser();
-  await act(at(f, "discussion"), () => postMessage(getDb(), u, { enrollmentId: s(f, "enrollmentId"), body: s(f, "body") }));
+  await act(at(f, "discussion"), () => postMessage(getDb(), u, {
+    enrollmentId: s(f, "enrollmentId"), body: s(f, "body"), isQuestion: f.get("isQuestion") === "on", fileId: s(f, "fileId") === "none" ? undefined : s(f, "fileId") || undefined,
+  }));
 }
 
 export async function milestoneAction(f: FormData) {
@@ -20,7 +22,7 @@ export async function milestoneAction(f: FormData) {
 
 export async function linkAction(f: FormData) {
   const u = await requireUser();
-  await act(at(f, "files"), () => addLink(getDb(), u, { enrollmentId: s(f, "enrollmentId"), name: s(f, "name"), url: s(f, "url") }), { info: "Link added." });
+  await act(at(f, "files"), () => addLink(getDb(), u, { enrollmentId: s(f, "enrollmentId"), name: s(f, "name"), url: s(f, "url"), description: s(f, "description") }), { info: "Link added." });
 }
 
 export async function submitAction(f: FormData) {
@@ -36,4 +38,10 @@ export async function scopeAction(f: FormData) {
   const accept = f.get("decision") === "accept";
   await act(at(f, ""), () => respondToScopeChange(getDb(), u, { enrollmentId: s(f, "enrollmentId"), accept }),
     { info: accept ? "You're now on the new brief version." : "You kept your original agreement. The company has been told." });
+}
+
+export async function draftAction(f: FormData) {
+  const u = await requireUser();
+  await act(at(f, "submissions"), () => saveSubmissionDraft(getDb(), u, { enrollmentId: s(f, "enrollmentId"), contribution: s(f, "contribution"), reflection: s(f, "reflection") }),
+    { info: "Draft saved. Only you can see it." });
 }

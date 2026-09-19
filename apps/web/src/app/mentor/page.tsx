@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, ne } from "drizzle-orm";
 import { ArrowRight, ClipboardCheck, Clock, Inbox, Users } from "lucide-react";
-import { assessments, briefVersions, enrollments, mentorProfiles, organizations, projects, submissions, user } from "@iq/db";
+import { assessments, briefVersions, cases, enrollments, mentorProfiles, messages as msgs, milestones, organizations, projects, submissions, user } from "@iq/db";
 import { mentorProfileAction } from "./actions";
 import { Field, SelectField } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,19 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
     .innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId)).innerJoin(organizations, eq(organizations.id, projects.orgId))
     .where(and(eq(briefVersions.mentorId, me.id), isNull(projects.mentorConfirmedAt)));
   const [mp] = await db.select().from(mentorProfiles).where(eq(mentorProfiles.userId, me.id));
+  const ids = mine.map((m) => m.e.id);
+  const [questions, checkpoints, blocked] = ids.length ? await Promise.all([
+    db.select({ m: msgs, e: enrollments.id, student: user.name }).from(msgs).innerJoin(enrollments, eq(enrollments.id, msgs.enrollmentId))
+      .innerJoin(user, eq(user.id, msgs.authorId))
+      .where(and(inArray(msgs.enrollmentId, ids), eq(msgs.isQuestion, true), isNull(msgs.answeredAt), ne(msgs.authorId, me.id))).orderBy(asc(msgs.createdAt)),
+    db.select({ ms: milestones, e: enrollments.id, student: user.name }).from(milestones).innerJoin(enrollments, eq(enrollments.id, milestones.enrollmentId))
+      .innerJoin(user, eq(user.id, enrollments.studentId))
+      .where(and(inArray(milestones.enrollmentId, ids), isNull(milestones.doneAt), inArray(enrollments.state, ["active", "revision_requested"]),
+        lt(milestones.dueAt, new Date(Date.now() + 7 * 864e5)))).orderBy(asc(milestones.dueAt)),
+    // Only that a blocker or extension request is open; its text stays between the student and staff.
+    db.select({ e: cases.enrollmentId, type: cases.type, student: user.name }).from(cases).innerJoin(user, eq(user.id, cases.reporterId))
+      .where(and(inArray(cases.enrollmentId, ids), inArray(cases.type, ["blocker", "extension"]), ne(cases.status, "resolved"))),
+  ]) : [[], [], []];
   const mentees = mine.filter((m) => m.e.state !== "submitted" && m.e.state !== "completed");
   const overdue = queue.filter((q) => businessDaysSince(q.s.createdAt) > 5).length;
 
@@ -63,6 +76,35 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
           </CardContent>
         </Card>
       ))}
+      {(questions.length > 0 || checkpoints.length > 0 || blocked.length > 0) && (
+        <Card className="mb-6">
+          <CardHeader><CardTitle>Needs you this week</CardTitle><CardDescription>Unanswered questions first, then checkpoints and students waiting on help.</CardDescription></CardHeader>
+          <CardContent>
+            <ul className="divide-y rounded-lg border">
+              {questions.map((q) => (
+                <li key={q.m.id}><Link href={`/workspace/${q.e}?tab=discussion`} className="press flex gap-3 p-3 hover:bg-muted/50">
+                  <Badge variant="secondary">Question</Badge>
+                  <span className="min-w-0 flex-1 truncate text-sm"><span className="font-medium">{q.student}:</span> {q.m.body}</span>
+                  <span className="text-xs text-muted-foreground">{when(q.m.createdAt)}</span>
+                </Link></li>
+              ))}
+              {checkpoints.map((c) => (
+                <li key={c.ms.id}><Link href={`/workspace/${c.e}`} className="press flex gap-3 p-3 hover:bg-muted/50">
+                  <Badge variant={c.ms.dueAt < new Date() ? "destructive" : "outline"}>{c.ms.dueAt < new Date() ? "Overdue" : "Checkpoint"}</Badge>
+                  <span className="flex-1 text-sm"><span className="font-medium">{c.student}:</span> {c.ms.title}</span>
+                  <span className="text-xs text-muted-foreground">{when(c.ms.dueAt)}</span>
+                </Link></li>
+              ))}
+              {blocked.map((b, i) => (
+                <li key={i}><Link href={`/workspace/${b.e}`} className="press flex gap-3 p-3 hover:bg-muted/50">
+                  <Badge variant="outline">{b.type === "extension" ? "Asked for time" : "Blocked"}</Badge>
+                  <span className="flex-1 text-sm"><span className="font-medium">{b.student}</span> asked program staff for help</span>
+                </Link></li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="Waiting for review" value={queue.length} icon={ClipboardCheck} hint="Target: feedback within 5 business days" />
         <Stat label="Past the target" value={overdue} icon={Clock} hint={overdue ? "Staff get an escalation for these" : "Nothing overdue"} />

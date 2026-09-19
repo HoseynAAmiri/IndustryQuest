@@ -4,6 +4,7 @@ import { Button, CheckField, Field, NONE, SelectField, TextArea } from "@/compon
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { reviseAction, saveBrief } from "./actions";
+import { UnsavedGuard } from "@/components/unsaved-guard";
 import { SELECTION } from "@iq/core";
 
 type Opt = { id: string; name: string };
@@ -145,6 +146,7 @@ export function BriefForm({ orgId, projectId, b, mentors, skills, revise }: {
         <div className="sticky bottom-0 -mx-4 flex flex-wrap gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
           <Button type="submit" name="intent" value="save" variant="outline">Save draft</Button>
           <Button type="submit" name="intent" value="submit">Save and submit for review</Button>
+          <span className="self-center"><UnsavedGuard /></span>
         </div>
       )}
     </form>
