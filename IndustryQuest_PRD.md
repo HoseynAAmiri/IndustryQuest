@@ -351,315 +351,344 @@ Report counts as well as percentages; a small pilot cannot support broad causal 
 
 Each row is an independently traceable product requirement. **M** means pilot requirement; **R1** and **R2** are later releases; **X** is exploratory. Detailed business rules and critical acceptance criteria follow the catalog.
 
+### Implementation status
+
+Last updated September 19, 2026. Marks sit in front of each requirement ID below and in the acceptance scenarios in Section 22.
+
+- `[x]` implemented and checked in the running app
+- `[~]` partly implemented; what's missing is listed below
+- `[ ]` not started
+
+| Release | Requirements | `[x]` | `[~]` | `[ ]` |
+| --- | ---: | ---: | ---: | ---: |
+| M (pilot) | 128 | 113 | 7 | 8 |
+| R1 | 100 | 0 | 0 | 100 |
+| R2 | 37 | 0 | 0 | 37 |
+| X | 3 | 0 | 0 | 3 |
+
+All 22 critical pilot acceptance scenarios (Section 22.1) pass. AC-20 was checked with an automated WCAG 2.2 AA audit (axe) and a keyboard-only pass; a session with a real screen reader is still outstanding.
+
+What the partial pilot items still lack:
+
+- **WRK-08:** External meeting links can be added as project links; no calendar (.ics) download yet.
+- **WRK-11:** Approved extensions move open deadlines and pause overdue reminders; no general pause state yet.
+- **WRK-15:** Accepted evidence is kept and the closeout note explains retention and portfolio rules; access isn't archived yet.
+- **ASM-09:** Mentor replacements are audited and students can raise concerns privately; no conflict-of-interest declaration yet.
+- **ORG-10:** Staff can pause or close a listing with a reason; suspending a whole organization isn't built.
+- **NTF-10:** Overdue rules respect extensions and pending extension requests; holidays and backup reviewers aren't modelled.
+- **OPS-10:** Students can export their record; deletion and retention processes aren't built.
+
+R1, R2 and X items are outside the current build, which covers the pilot only.
+
 ### 8.1 Accounts, identity, and onboarding
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| ACC-01 | Email registration, verification, login, logout, recovery, and clear handling of expired or reused access links. | M |
-| ACC-02 | Role-aware onboarding for students, mentors, company owners, and staff; one account can hold multiple authorized roles. | M |
-| ACC-03 | Student onboarding captures interests, self-reported skills, learning goals, weekly availability, timezone, and preferred participation mode. | M |
-| ACC-04 | University affiliation is optional for open opportunities; affiliation-dependent programs explain their membership requirements. | M |
-| ACC-05 | Personal email continuity lets students keep their account after losing access to a university address. | M |
-| ACC-06 | Organization and mentor verification can be performed by pilot staff; display what was checked without implying universal professional certification. | M |
-| ACC-07 | Staff and organization administrators use stronger authentication; session revocation and account recovery protect privileged access. | M |
-| ACC-08 | Students may browse public briefs before registration; applying and accessing protected materials require authentication. | M |
-| ACC-09 | Onboarding is resumable and skippable where fields are optional; explain why required information is needed. | M |
-| ACC-10 | Resume or profile import proposes skills and experience for user confirmation; imported claims are never automatically verified. | R1 |
-| ACC-11 | Institutional single sign-on and invitation links join the correct program without creating duplicate student identities. | R1 |
-| ACC-12 | Duplicate account reconciliation preserves evidence ownership and audit history after identity checks and explicit user agreement. | R1 |
+| [x] ACC-01 | Email registration, verification, login, logout, recovery, and clear handling of expired or reused access links. | M |
+| [x] ACC-02 | Role-aware onboarding for students, mentors, company owners, and staff; one account can hold multiple authorized roles. | M |
+| [x] ACC-03 | Student onboarding captures interests, self-reported skills, learning goals, weekly availability, timezone, and preferred participation mode. | M |
+| [x] ACC-04 | University affiliation is optional for open opportunities; affiliation-dependent programs explain their membership requirements. | M |
+| [x] ACC-05 | Personal email continuity lets students keep their account after losing access to a university address. | M |
+| [x] ACC-06 | Organization and mentor verification can be performed by pilot staff; display what was checked without implying universal professional certification. | M |
+| [ ] ACC-07 | Staff and organization administrators use stronger authentication; session revocation and account recovery protect privileged access. | M |
+| [x] ACC-08 | Students may browse public briefs before registration; applying and accessing protected materials require authentication. | M |
+| [x] ACC-09 | Onboarding is resumable and skippable where fields are optional; explain why required information is needed. | M |
+| [ ] ACC-10 | Resume or profile import proposes skills and experience for user confirmation; imported claims are never automatically verified. | R1 |
+| [ ] ACC-11 | Institutional single sign-on and invitation links join the correct program without creating duplicate student identities. | R1 |
+| [ ] ACC-12 | Duplicate account reconciliation preserves evidence ownership and audit history after identity checks and explicit user agreement. | R1 |
 
 ### 8.2 Student profile and professional identity
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| PRO-01 | Editable profile includes chosen display name, pronouns if desired, bio, discipline, interests, goals, and optional photo. | M |
-| PRO-02 | Skills are labeled as self-reported, externally supplied, or platform-verified, with evidence provenance visible. | M |
-| PRO-03 | A project timeline shows approved completions, the student's role, reviewed contributions, and allowed supporting evidence. | M |
-| PRO-04 | Profile visibility can be private, shared by controlled link, or public; students preview exactly what others can see. | M |
-| PRO-05 | Field-level sharing keeps contact details, availability, accommodation information, and private reflections out of public profiles. | M |
-| PRO-06 | Skill cards show supporting projects, assessment dates, and the next requirement for a higher mastery tier. | M |
-| PRO-07 | XP and account level are visibly separate from skill mastery and project assessment results. | M |
-| PRO-08 | Achievement gallery displays criteria, issuer, issue date, evidence reference, and current credential status. | M |
-| PRO-09 | Students choose featured projects, reorder portfolio entries, and add a short explanation of their contribution. | R1 |
-| PRO-10 | Endorsements and recommendations identify the relationship and project behind the statement; requests require recipient consent. | R1 |
-| PRO-11 | Multiple portfolio views support different roles or audiences without changing the underlying verified record. | R2 |
-| PRO-12 | Profile export and account continuity preserve authorized evidence when the student leaves a course, institution, or paid program. | M |
+| [x] PRO-01 | Editable profile includes chosen display name, pronouns if desired, bio, discipline, interests, goals, and optional photo. | M |
+| [x] PRO-02 | Skills are labeled as self-reported, externally supplied, or platform-verified, with evidence provenance visible. | M |
+| [x] PRO-03 | A project timeline shows approved completions, the student's role, reviewed contributions, and allowed supporting evidence. | M |
+| [x] PRO-04 | Profile visibility can be private, shared by controlled link, or public; students preview exactly what others can see. | M |
+| [x] PRO-05 | Field-level sharing keeps contact details, availability, accommodation information, and private reflections out of public profiles. | M |
+| [x] PRO-06 | Skill cards show supporting projects, assessment dates, and the next requirement for a higher mastery tier. | M |
+| [x] PRO-07 | XP and account level are visibly separate from skill mastery and project assessment results. | M |
+| [x] PRO-08 | Achievement gallery displays criteria, issuer, issue date, evidence reference, and current credential status. | M |
+| [ ] PRO-09 | Students choose featured projects, reorder portfolio entries, and add a short explanation of their contribution. | R1 |
+| [ ] PRO-10 | Endorsements and recommendations identify the relationship and project behind the statement; requests require recipient consent. | R1 |
+| [ ] PRO-11 | Multiple portfolio views support different roles or audiences without changing the underlying verified record. | R2 |
+| [x] PRO-12 | Profile export and account continuity preserve authorized evidence when the student leaves a course, institution, or paid program. | M |
 
 ### 8.3 Project discovery and search
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| DIS-01 | Search project titles, descriptions, skills, companies, and learning outcomes using accessible results and clear no-results states. | M |
-| DIS-02 | Filter by discipline, skill, difficulty, effort, deadline, company, availability, compensation status, and beginner suitability. | M |
-| DIS-03 | Project cards show real versus practice status, mentor availability, estimated effort, open places, and key prerequisites. | M |
-| DIS-04 | Explain recommendation fit using declared interests, availability, and evidence; users can dismiss or correct a recommendation. | M |
-| DIS-05 | Show hard eligibility requirements separately from desirable skills; identify a concrete next step for missing requirements. | M |
-| DIS-06 | Save and unsave projects; preserve saved state across devices and clearly mark closed or changed listings. | M |
-| DIS-07 | Distinguish accepting applications, waitlist only, full, paused, and closed projects; hide stale openings from default recommendations. | M |
-| DIS-08 | Sort by relevance, newest, estimated effort, deadline, or compensation where comparable; disclose sponsored placement. | R1 |
-| DIS-09 | Compare selected projects by learning value, mentor commitment, prerequisites, schedule, compensation, and evidence opportunities. | R1 |
-| DIS-10 | Saved searches produce opt-in opportunity alerts with configurable frequency. | R1 |
-| DIS-11 | Location and travel filters support remote, hybrid, and on-site work, including distance, accessibility, and travel support. | R1 |
-| DIS-12 | Discovery reserves visible space for beginner opportunities and emerging companies rather than amplifying only popular listings. | R1 |
-| DIS-13 | Students can signal missing interests or request a project type; aggregate unmet demand informs partner recruitment. | R1 |
-| DIS-14 | Personalized exploration balances known interests with adjacent skills and provides a non-personalized browsing option. | R2 |
+| [x] DIS-01 | Search project titles, descriptions, skills, companies, and learning outcomes using accessible results and clear no-results states. | M |
+| [x] DIS-02 | Filter by discipline, skill, difficulty, effort, deadline, company, availability, compensation status, and beginner suitability. | M |
+| [x] DIS-03 | Project cards show real versus practice status, mentor availability, estimated effort, open places, and key prerequisites. | M |
+| [x] DIS-04 | Explain recommendation fit using declared interests, availability, and evidence; users can dismiss or correct a recommendation. | M |
+| [x] DIS-05 | Show hard eligibility requirements separately from desirable skills; identify a concrete next step for missing requirements. | M |
+| [x] DIS-06 | Save and unsave projects; preserve saved state across devices and clearly mark closed or changed listings. | M |
+| [x] DIS-07 | Distinguish accepting applications, waitlist only, full, paused, and closed projects; hide stale openings from default recommendations. | M |
+| [ ] DIS-08 | Sort by relevance, newest, estimated effort, deadline, or compensation where comparable; disclose sponsored placement. | R1 |
+| [ ] DIS-09 | Compare selected projects by learning value, mentor commitment, prerequisites, schedule, compensation, and evidence opportunities. | R1 |
+| [ ] DIS-10 | Saved searches produce opt-in opportunity alerts with configurable frequency. | R1 |
+| [ ] DIS-11 | Location and travel filters support remote, hybrid, and on-site work, including distance, accessibility, and travel support. | R1 |
+| [ ] DIS-12 | Discovery reserves visible space for beginner opportunities and emerging companies rather than amplifying only popular listings. | R1 |
+| [ ] DIS-13 | Students can signal missing interests or request a project type; aggregate unmet demand informs partner recruitment. | R1 |
+| [ ] DIS-14 | Personalized exploration balances known interests with adjacent skills and provides a non-personalized browsing option. | R2 |
 
 ### 8.4 Project creation and publishing
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| PRJ-01 | Structured brief editor captures the required project fields listed in Section 9 and supports draft saving. | M |
-| PRJ-02 | Templates help authors write a bounded problem, learning outcomes, deliverables, milestones, and a review rubric. | M |
-| PRJ-03 | Every live project has a verified organization, accountable owner, named mentor, and backup escalation contact. | M |
-| PRJ-04 | State expected student effort, mentor commitment, active dates, places, and selection process before publication. | M |
-| PRJ-05 | Display compensation, expenses, and any participation costs separately; unknown terms prevent publishing a live opportunity. | M |
-| PRJ-06 | Declare data access, required software, equipment, prerequisite knowledge, confidentiality, and allowed portfolio material. | M |
-| PRJ-07 | Publish the assessment rubric and pass criteria before applications open. | M |
-| PRJ-08 | Staff approve, reject, or return briefs with reasons; publication requires the learning and support quality checks. | M |
-| PRJ-09 | Public and restricted versions of a brief prevent disclosure of confidential company details during discovery. | M |
-| PRJ-10 | Versioned briefs preserve the terms accepted by each enrollment; material changes require participant agreement. | M |
-| PRJ-11 | Owners can pause applications, close a listing, or withdraw a project with a reason and participant notification. | M |
-| PRJ-12 | Duplicate a project into a new draft, requiring renewed confirmation of data rights, schedule, capacity, and mentor availability. | R1 |
-| PRJ-13 | Independent multi-seat projects create separate enrollments and reviews for each student; collaborative team delivery is introduced in R1. | M |
-| PRJ-14 | Private projects can be limited to an approved cohort, institution, invitation list, or partner program. | R1 |
-| PRJ-15 | A scope-change workflow records additions, removals, timeline effects, and consent without silently rewriting the agreement. | M |
-| PRJ-16 | Recurring briefs and partner templates include expiry checks so outdated datasets, links, or supervision commitments are not reused. | R2 |
+| [x] PRJ-01 | Structured brief editor captures the required project fields listed in Section 9 and supports draft saving. | M |
+| [ ] PRJ-02 | Templates help authors write a bounded problem, learning outcomes, deliverables, milestones, and a review rubric. | M |
+| [x] PRJ-03 | Every live project has a verified organization, accountable owner, named mentor, and backup escalation contact. | M |
+| [x] PRJ-04 | State expected student effort, mentor commitment, active dates, places, and selection process before publication. | M |
+| [x] PRJ-05 | Display compensation, expenses, and any participation costs separately; unknown terms prevent publishing a live opportunity. | M |
+| [x] PRJ-06 | Declare data access, required software, equipment, prerequisite knowledge, confidentiality, and allowed portfolio material. | M |
+| [x] PRJ-07 | Publish the assessment rubric and pass criteria before applications open. | M |
+| [x] PRJ-08 | Staff approve, reject, or return briefs with reasons; publication requires the learning and support quality checks. | M |
+| [x] PRJ-09 | Public and restricted versions of a brief prevent disclosure of confidential company details during discovery. | M |
+| [x] PRJ-10 | Versioned briefs preserve the terms accepted by each enrollment; material changes require participant agreement. | M |
+| [x] PRJ-11 | Owners can pause applications, close a listing, or withdraw a project with a reason and participant notification. | M |
+| [ ] PRJ-12 | Duplicate a project into a new draft, requiring renewed confirmation of data rights, schedule, capacity, and mentor availability. | R1 |
+| [x] PRJ-13 | Independent multi-seat projects create separate enrollments and reviews for each student; collaborative team delivery is introduced in R1. | M |
+| [ ] PRJ-14 | Private projects can be limited to an approved cohort, institution, invitation list, or partner program. | R1 |
+| [x] PRJ-15 | A scope-change workflow records additions, removals, timeline effects, and consent without silently rewriting the agreement. | M |
+| [ ] PRJ-16 | Recurring briefs and partner templates include expiry checks so outdated datasets, links, or supervision commitments are not reused. | R2 |
 
 ### 8.5 Applications, selection, and enrollment
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| ENR-01 | Short applications capture motivation, relevant evidence, availability, and requested support without requiring speculative project work. | M |
-| ENR-02 | Students see application status, decision timing, withdrawal controls, and a history of their submissions. | M |
-| ENR-03 | Authorized owners review applicants against declared criteria and can provide a constructive decision reason. | M |
-| ENR-04 | Offers hold a place until an explicit expiry; atomic acceptance and release prevent overbooking or duplicate reservations. | M |
-| ENR-05 | Offer acceptance confirms the specific brief version, participation terms, mentor arrangement, and applicable agreements. | M |
-| ENR-06 | Waitlists, expired offers, and reopened places have explicit transitions and do not imply guaranteed selection. | R1 |
-| ENR-07 | A configurable concurrent-project limit protects student and mentor capacity; staff may grant a documented exception. | M |
-| ENR-08 | Beginner projects permit students with no verified work and avoid requiring a prior industry rating. | M |
-| ENR-09 | Alternative evidence and manual equivalency review can satisfy prerequisites for experienced students entering the platform. | M |
-| ENR-10 | Blind initial review can hide selected identity and institution fields while preserving information necessary for eligibility. | R1 |
-| ENR-11 | Low-risk introductory projects may support immediate enrollment when eligibility, mentor coverage, and capacity are confirmed. | R1 |
-| ENR-12 | Rejection, withdrawal, or an expired offer does not deduct XP or create a public negative rating. | M |
+| [x] ENR-01 | Short applications capture motivation, relevant evidence, availability, and requested support without requiring speculative project work. | M |
+| [x] ENR-02 | Students see application status, decision timing, withdrawal controls, and a history of their submissions. | M |
+| [x] ENR-03 | Authorized owners review applicants against declared criteria and can provide a constructive decision reason. | M |
+| [x] ENR-04 | Offers hold a place until an explicit expiry; atomic acceptance and release prevent overbooking or duplicate reservations. | M |
+| [x] ENR-05 | Offer acceptance confirms the specific brief version, participation terms, mentor arrangement, and applicable agreements. | M |
+| [ ] ENR-06 | Waitlists, expired offers, and reopened places have explicit transitions and do not imply guaranteed selection. | R1 |
+| [x] ENR-07 | A configurable concurrent-project limit protects student and mentor capacity; staff may grant a documented exception. | M |
+| [x] ENR-08 | Beginner projects permit students with no verified work and avoid requiring a prior industry rating. | M |
+| [x] ENR-09 | Alternative evidence and manual equivalency review can satisfy prerequisites for experienced students entering the platform. | M |
+| [ ] ENR-10 | Blind initial review can hide selected identity and institution fields while preserving information necessary for eligibility. | R1 |
+| [ ] ENR-11 | Low-risk introductory projects may support immediate enrollment when eligibility, mentor coverage, and capacity are confirmed. | R1 |
+| [x] ENR-12 | Rejection, withdrawal, or an expired offer does not deduct XP or create a public negative rating. | M |
 
 ### 8.6 Project workspace and delivery
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| WRK-01 | A shared workspace contains the accepted brief, mentor contact, milestones, resources, discussion, submissions, and review history. | M |
-| WRK-02 | Milestones have owners, due dates, deliverable descriptions, and visible completion status. | M |
-| WRK-03 | Attach files or approved external links with descriptions, version history, and permission-aware access. | M |
-| WRK-04 | Project discussion supports questions, replies, mentions, attachments, and clear indication of pending mentor questions. | M |
-| WRK-05 | Submissions can be drafted, submitted, superseded, and resubmitted while retaining the assessed version. | M |
-| WRK-06 | Students flag blockers and request help or an extension without having to post sensitive details publicly. | M |
-| WRK-07 | A visible activity timeline records meaningful project actions, changes, feedback, and agreed extensions. | M |
-| WRK-08 | External meeting links and calendar downloads support check-ins without requiring a built-in video service. | M |
-| WRK-09 | Students submit a short reflection on what they learned; reflection visibility is separate from company deliverable visibility. | M |
-| WRK-10 | Drafts autosave or clearly indicate unsaved changes; interrupted uploads can be retried without duplicating a submission. | M |
-| WRK-11 | Approved pauses and revised deadlines are visible to all affected participants and suppress inappropriate overdue nudges. | M |
-| WRK-12 | Later task boards support subtasks, dependencies, checklists, comments, and workload views. | R1 |
-| WRK-13 | Optional effort logs compare estimated and actual workload; logs do not directly earn XP or require surveillance. | R1 |
-| WRK-14 | Reusable starter kits provide datasets, analysis notebooks, CAD assets, templates, and context with explicit usage rights. | R1 |
-| WRK-15 | Project closeout preserves accepted evidence, archives obsolete access, and explains retention and portfolio permissions. | M |
+| [x] WRK-01 | A shared workspace contains the accepted brief, mentor contact, milestones, resources, discussion, submissions, and review history. | M |
+| [x] WRK-02 | Milestones have owners, due dates, deliverable descriptions, and visible completion status. | M |
+| [x] WRK-03 | Attach files or approved external links with descriptions, version history, and permission-aware access. | M |
+| [x] WRK-04 | Project discussion supports questions, replies, mentions, attachments, and clear indication of pending mentor questions. | M |
+| [x] WRK-05 | Submissions can be drafted, submitted, superseded, and resubmitted while retaining the assessed version. | M |
+| [x] WRK-06 | Students flag blockers and request help or an extension without having to post sensitive details publicly. | M |
+| [x] WRK-07 | A visible activity timeline records meaningful project actions, changes, feedback, and agreed extensions. | M |
+| [~] WRK-08 | External meeting links and calendar downloads support check-ins without requiring a built-in video service. | M |
+| [x] WRK-09 | Students submit a short reflection on what they learned; reflection visibility is separate from company deliverable visibility. | M |
+| [x] WRK-10 | Drafts autosave or clearly indicate unsaved changes; interrupted uploads can be retried without duplicating a submission. | M |
+| [~] WRK-11 | Approved pauses and revised deadlines are visible to all affected participants and suppress inappropriate overdue nudges. | M |
+| [ ] WRK-12 | Later task boards support subtasks, dependencies, checklists, comments, and workload views. | R1 |
+| [ ] WRK-13 | Optional effort logs compare estimated and actual workload; logs do not directly earn XP or require surveillance. | R1 |
+| [ ] WRK-14 | Reusable starter kits provide datasets, analysis notebooks, CAD assets, templates, and context with explicit usage rights. | R1 |
+| [~] WRK-15 | Project closeout preserves accepted evidence, archives obsolete access, and explains retention and portfolio permissions. | M |
 
 ### 8.7 Industry mentorship
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| MEN-01 | Mentor profile lists expertise, professional context, mentoring interests, timezone, and verified affiliation where available. | M |
-| MEN-02 | Every active enrollment has a named mentor who accepts the assignment and stated support commitment. | M |
-| MEN-03 | Availability and mentee capacity are recorded; pilot staff can perform assignment manually. | M |
-| MEN-04 | A welcome template sets communication channels, response expectations, checkpoint dates, and escalation contact. | M |
-| MEN-05 | Mentor dashboard prioritizes unanswered questions, due checkpoints, pending reviews, and blocked students. | M |
-| MEN-06 | Private student feedback evaluates mentor clarity, responsiveness, usefulness, and respectful conduct. | M |
-| MEN-07 | Mentor absence triggers reminders, escalation, and reassignment; the student is not penalized for missing mentor feedback. | M |
-| MEN-08 | Continuing mentorship requires mutual opt-in, defined expectations, and available capacity beyond the originating project. | R1 |
-| MEN-09 | Mentor discovery supports expertise, interests, language, availability, and preferred support format. | R1 |
-| MEN-10 | Office hours, group clinics, appointment requests, cancellation, and rescheduling reduce repeated one-to-one support work. | R1 |
-| MEN-11 | Mentor development includes rubric examples, onboarding resources, calibration exercises, and guidance for constructive feedback. | R1 |
-| MEN-12 | Mentor recognition reflects reliable support and validated contribution, not the number of high grades awarded. | R1 |
-| MEN-13 | Co-mentoring allows specialist support with explicit permissions and one accountable lead. | R2 |
+| [x] MEN-01 | Mentor profile lists expertise, professional context, mentoring interests, timezone, and verified affiliation where available. | M |
+| [x] MEN-02 | Every active enrollment has a named mentor who accepts the assignment and stated support commitment. | M |
+| [x] MEN-03 | Availability and mentee capacity are recorded; pilot staff can perform assignment manually. | M |
+| [ ] MEN-04 | A welcome template sets communication channels, response expectations, checkpoint dates, and escalation contact. | M |
+| [x] MEN-05 | Mentor dashboard prioritizes unanswered questions, due checkpoints, pending reviews, and blocked students. | M |
+| [ ] MEN-06 | Private student feedback evaluates mentor clarity, responsiveness, usefulness, and respectful conduct. | M |
+| [x] MEN-07 | Mentor absence triggers reminders, escalation, and reassignment; the student is not penalized for missing mentor feedback. | M |
+| [ ] MEN-08 | Continuing mentorship requires mutual opt-in, defined expectations, and available capacity beyond the originating project. | R1 |
+| [ ] MEN-09 | Mentor discovery supports expertise, interests, language, availability, and preferred support format. | R1 |
+| [ ] MEN-10 | Office hours, group clinics, appointment requests, cancellation, and rescheduling reduce repeated one-to-one support work. | R1 |
+| [ ] MEN-11 | Mentor development includes rubric examples, onboarding resources, calibration exercises, and guidance for constructive feedback. | R1 |
+| [ ] MEN-12 | Mentor recognition reflects reliable support and validated contribution, not the number of high grades awarded. | R1 |
+| [ ] MEN-13 | Co-mentoring allows specialist support with explicit permissions and one accountable lead. | R2 |
 
 ### 8.8 Assessment, feedback, and disputes
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| ASM-01 | Assessors use the rubric version agreed at enrollment, with criteria-specific scores, comments, and evidence references. | M |
-| ASM-02 | Separate work quality, communication, and other declared criteria; identify which criteria support a skill claim. | M |
-| ASM-03 | Reviews result in acceptance, a specific revision request, or an explained non-completion decision. | M |
-| ASM-04 | Students can ask for clarification and submit a bounded revision without losing the history of earlier feedback. | M |
-| ASM-05 | Review-ready submissions enter a queue with response targets, reminder rules, and escalation ownership. | M |
-| ASM-06 | Students evaluate project scope, resources, learning value, and mentor support through a separate feedback channel. | M |
-| ASM-07 | Public feedback requires moderation and appropriate consent; private developmental feedback remains private by default. | R1 |
-| ASM-08 | A student can appeal an assessment or credential decision; an authorized reviewer records the resolution. | M |
-| ASM-09 | Conflicts of interest and reviewer substitutions are recorded; students can raise a concern without confronting the assessor publicly. | M |
-| ASM-10 | Instructor grades, employer evaluations, and mentor guidance remain distinct records with different access rules. | R1 |
-| ASM-11 | High-level credentials can require a second assessor or a moderation sample before issuance. | R1 |
-| ASM-12 | Reviewer calibration detects systematic severity differences and prompts moderation rather than silently changing scores. | R2 |
-| ASM-13 | Team assessment combines shared outcomes with evidence of individual contribution; peer feedback cannot independently certify mastery. | R1 |
-| ASM-14 | Integrity checks route concerns for human review and allow explanation; detection scores do not automatically prove misconduct. | R1 |
+| [x] ASM-01 | Assessors use the rubric version agreed at enrollment, with criteria-specific scores, comments, and evidence references. | M |
+| [x] ASM-02 | Separate work quality, communication, and other declared criteria; identify which criteria support a skill claim. | M |
+| [x] ASM-03 | Reviews result in acceptance, a specific revision request, or an explained non-completion decision. | M |
+| [x] ASM-04 | Students can ask for clarification and submit a bounded revision without losing the history of earlier feedback. | M |
+| [x] ASM-05 | Review-ready submissions enter a queue with response targets, reminder rules, and escalation ownership. | M |
+| [ ] ASM-06 | Students evaluate project scope, resources, learning value, and mentor support through a separate feedback channel. | M |
+| [ ] ASM-07 | Public feedback requires moderation and appropriate consent; private developmental feedback remains private by default. | R1 |
+| [x] ASM-08 | A student can appeal an assessment or credential decision; an authorized reviewer records the resolution. | M |
+| [~] ASM-09 | Conflicts of interest and reviewer substitutions are recorded; students can raise a concern without confronting the assessor publicly. | M |
+| [ ] ASM-10 | Instructor grades, employer evaluations, and mentor guidance remain distinct records with different access rules. | R1 |
+| [ ] ASM-11 | High-level credentials can require a second assessor or a moderation sample before issuance. | R1 |
+| [ ] ASM-12 | Reviewer calibration detects systematic severity differences and prompts moderation rather than silently changing scores. | R2 |
+| [ ] ASM-13 | Team assessment combines shared outcomes with evidence of individual contribution; peer feedback cannot independently certify mastery. | R1 |
+| [ ] ASM-14 | Integrity checks route concerns for human review and allow explanation; detection scores do not automatically prove misconduct. | R1 |
 
 ### 8.9 Gamification and progression
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| GAM-01 | Accepted real-project completion earns a published amount of XP once per eligible enrollment and brief reward version. | M |
-| GAM-02 | An account-level progress bar shows cumulative XP, the next threshold, and the transactions contributing to it. | M |
-| GAM-03 | Skill mastery tiers depend on rubric-backed evidence, not total XP or time spent using the app. | M |
-| GAM-04 | A small initial achievement set recognizes first completion, demonstrated skill, and a meaningful progression milestone. | M |
-| GAM-05 | Eligibility explanations show which skill evidence or other conditions make a harder quest available. | M |
-| GAM-06 | Completion feedback celebrates the contribution and learning; animation, sound, and confetti can be disabled. | M |
-| GAM-07 | XP history includes corrections and reasons; repeated requests or notifications cannot issue duplicate rewards. | M |
-| GAM-08 | Skill pathways organize related quests into beginner, developing, and advanced milestones without requiring one rigid route. | R1 |
-| GAM-09 | Optional weekly goals support realistic project progress; breaks and approved pauses preserve achievements. | R1 |
-| GAM-10 | Optional streaks track meaningful learning actions, allow flexible schedules and pause controls, and never reduce skill standing. | R1 |
-| GAM-11 | Opt-in leaderboards compare appropriate cohorts and time windows with clear scoring, sample size, and tie rules. | R1 |
-| GAM-12 | Personal bests and self-comparison offer an alternative to rankings for students who prefer private progress. | R1 |
-| GAM-13 | Cosmetic avatars, profile themes, titles, and achievement displays provide expression without influencing eligibility. | R2 |
-| GAM-14 | Quest chains connect related work through a story or industry theme while preserving each project's standalone learning value. | R1 |
-| GAM-15 | Team achievements recognize shared milestones while individual credentials retain contribution requirements. | R1 |
-| GAM-16 | Seasonal events and community challenges publish participation limits and do not reward unpaid competitive delivery to companies. | R2 |
-| GAM-17 | Sponsor-funded rewards disclose eligibility and selection rules; no purchase can buy verified mastery or project access prerequisites. | R2 |
-| GAM-18 | Personal progress can surface underdeveloped skills and a balanced next step rather than encouraging repetitive XP farming. | R2 |
-| GAM-19 | Optional game narratives or collectible journeys are experiments whose effect on learning and accessibility must be evaluated. | X |
+| [x] GAM-01 | Accepted real-project completion earns a published amount of XP once per eligible enrollment and brief reward version. | M |
+| [x] GAM-02 | An account-level progress bar shows cumulative XP, the next threshold, and the transactions contributing to it. | M |
+| [x] GAM-03 | Skill mastery tiers depend on rubric-backed evidence, not total XP or time spent using the app. | M |
+| [x] GAM-04 | A small initial achievement set recognizes first completion, demonstrated skill, and a meaningful progression milestone. | M |
+| [x] GAM-05 | Eligibility explanations show which skill evidence or other conditions make a harder quest available. | M |
+| [x] GAM-06 | Completion feedback celebrates the contribution and learning; animation, sound, and confetti can be disabled. | M |
+| [x] GAM-07 | XP history includes corrections and reasons; repeated requests or notifications cannot issue duplicate rewards. | M |
+| [ ] GAM-08 | Skill pathways organize related quests into beginner, developing, and advanced milestones without requiring one rigid route. | R1 |
+| [ ] GAM-09 | Optional weekly goals support realistic project progress; breaks and approved pauses preserve achievements. | R1 |
+| [ ] GAM-10 | Optional streaks track meaningful learning actions, allow flexible schedules and pause controls, and never reduce skill standing. | R1 |
+| [ ] GAM-11 | Opt-in leaderboards compare appropriate cohorts and time windows with clear scoring, sample size, and tie rules. | R1 |
+| [ ] GAM-12 | Personal bests and self-comparison offer an alternative to rankings for students who prefer private progress. | R1 |
+| [ ] GAM-13 | Cosmetic avatars, profile themes, titles, and achievement displays provide expression without influencing eligibility. | R2 |
+| [ ] GAM-14 | Quest chains connect related work through a story or industry theme while preserving each project's standalone learning value. | R1 |
+| [ ] GAM-15 | Team achievements recognize shared milestones while individual credentials retain contribution requirements. | R1 |
+| [ ] GAM-16 | Seasonal events and community challenges publish participation limits and do not reward unpaid competitive delivery to companies. | R2 |
+| [ ] GAM-17 | Sponsor-funded rewards disclose eligibility and selection rules; no purchase can buy verified mastery or project access prerequisites. | R2 |
+| [ ] GAM-18 | Personal progress can surface underdeveloped skills and a balanced next step rather than encouraging repetitive XP farming. | R2 |
+| [ ] GAM-19 | Optional game narratives or collectible journeys are experiments whose effect on learning and accessibility must be evaluated. | X |
 
 ### 8.10 Credentials, evidence, and portfolio sharing
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| CRD-01 | Verified completion records name the issuer, project, learner, contribution, assessment date, and verification status. | M |
-| CRD-02 | Verification pages validate a credential without exposing private files, private feedback, or confidential company information. | M |
-| CRD-03 | Students propose a portfolio summary; company-controlled confidential content requires approval before public release. | M |
-| CRD-04 | Revoked, superseded, disputed, and expired credentials remain distinguishable from active records. | M |
-| CRD-05 | Learners can export a human-readable record and machine-readable authorized metadata. | M |
-| CRD-06 | Share links support audience scope, revocation, and expiry where access is restricted. | M |
-| CRD-07 | Downloadable certificates and badge images link back to live verification rather than acting as standalone proof. | R1 |
-| CRD-08 | External credentials can be attached with their issuer and verification method; external evidence remains distinguishable from platform assessment. | R1 |
-| CRD-09 | Skill transcripts summarize evidence across companies without disclosing each company's protected materials. | R1 |
-| CRD-10 | Standards-based credential exchange and wallet interoperability are evaluated after the internal evidence and revocation model is stable. | R2 |
+| [x] CRD-01 | Verified completion records name the issuer, project, learner, contribution, assessment date, and verification status. | M |
+| [x] CRD-02 | Verification pages validate a credential without exposing private files, private feedback, or confidential company information. | M |
+| [x] CRD-03 | Students propose a portfolio summary; company-controlled confidential content requires approval before public release. | M |
+| [x] CRD-04 | Revoked, superseded, disputed, and expired credentials remain distinguishable from active records. | M |
+| [x] CRD-05 | Learners can export a human-readable record and machine-readable authorized metadata. | M |
+| [x] CRD-06 | Share links support audience scope, revocation, and expiry where access is restricted. | M |
+| [ ] CRD-07 | Downloadable certificates and badge images link back to live verification rather than acting as standalone proof. | R1 |
+| [ ] CRD-08 | External credentials can be attached with their issuer and verification method; external evidence remains distinguishable from platform assessment. | R1 |
+| [ ] CRD-09 | Skill transcripts summarize evidence across companies without disclosing each company's protected materials. | R1 |
+| [ ] CRD-10 | Standards-based credential exchange and wallet interoperability are evaluated after the internal evidence and revocation model is stable. | R2 |
 
 ### 8.11 Community and professional network
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| COM-01 | Students and mentors can request a professional connection with mutual consent and straightforward removal or blocking. | R1 |
-| COM-02 | Company, mentor, and skill following creates opt-in updates rather than unrestricted unsolicited direct messages. | R1 |
-| COM-03 | Cohort spaces support introductions, project discussion, peer help, and facilitator announcements with membership controls. | R1 |
-| COM-04 | Questions can be tagged by skill and answered by peers or mentors; approved answers do not automatically certify expertise. | R1 |
-| COM-05 | Students may share approved milestones and finished work, with visibility controls and confidential-content checks. | R1 |
-| COM-06 | Study groups, project clubs, and discipline communities have moderators, membership rules, and reporting tools. | R2 |
-| COM-07 | Community events include company talks, mentor clinics, demos, registration, reminders, attendance, and accessible recordings when available. | R1 |
-| COM-08 | Peer-help recognition is separate from employer-verified mastery and cannot substitute for a reviewed project. | R2 |
-| COM-09 | Alumni can retain profiles, mentor new learners, and join relevant communities after graduation. | R1 |
+| [ ] COM-01 | Students and mentors can request a professional connection with mutual consent and straightforward removal or blocking. | R1 |
+| [ ] COM-02 | Company, mentor, and skill following creates opt-in updates rather than unrestricted unsolicited direct messages. | R1 |
+| [ ] COM-03 | Cohort spaces support introductions, project discussion, peer help, and facilitator announcements with membership controls. | R1 |
+| [ ] COM-04 | Questions can be tagged by skill and answered by peers or mentors; approved answers do not automatically certify expertise. | R1 |
+| [ ] COM-05 | Students may share approved milestones and finished work, with visibility controls and confidential-content checks. | R1 |
+| [ ] COM-06 | Study groups, project clubs, and discipline communities have moderators, membership rules, and reporting tools. | R2 |
+| [ ] COM-07 | Community events include company talks, mentor clinics, demos, registration, reminders, attendance, and accessible recordings when available. | R1 |
+| [ ] COM-08 | Peer-help recognition is separate from employer-verified mastery and cannot substitute for a reviewed project. | R2 |
+| [ ] COM-09 | Alumni can retain profiles, mentor new learners, and join relevant communities after graduation. | R1 |
 
 ### 8.12 Team projects and collaboration
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| TEM-01 | Project owners specify team size, required roles, shared deliverables, and individual evidence expectations. | R1 |
-| TEM-02 | Students create or join a team with consent, role visibility, capacity checks, and an explicit project invitation. | R1 |
-| TEM-03 | Team discovery uses complementary skills, interests, availability, and working preferences with an explanation of suggested fit. | R2 |
-| TEM-04 | A team charter records communication expectations, responsibilities, and a process for resolving disagreement. | R1 |
-| TEM-05 | Shared tasks and milestones track responsibility without relying on keystroke counts or continuous activity monitoring. | R1 |
-| TEM-06 | Final submission includes individual contribution statements and relevant evidence confirmed during review. | R1 |
-| TEM-07 | Membership changes, departures, and replacements preserve authorship history and trigger a scope or schedule review. | R1 |
-| TEM-08 | Private peer feedback helps mentors investigate participation concerns; peers cannot deduct another student's XP directly. | R1 |
-| TEM-09 | Cross-discipline and cross-institution teams require compatible program terms, permissions, calendars, and mentor coverage. | R2 |
+| [ ] TEM-01 | Project owners specify team size, required roles, shared deliverables, and individual evidence expectations. | R1 |
+| [ ] TEM-02 | Students create or join a team with consent, role visibility, capacity checks, and an explicit project invitation. | R1 |
+| [ ] TEM-03 | Team discovery uses complementary skills, interests, availability, and working preferences with an explanation of suggested fit. | R2 |
+| [ ] TEM-04 | A team charter records communication expectations, responsibilities, and a process for resolving disagreement. | R1 |
+| [ ] TEM-05 | Shared tasks and milestones track responsibility without relying on keystroke counts or continuous activity monitoring. | R1 |
+| [ ] TEM-06 | Final submission includes individual contribution statements and relevant evidence confirmed during review. | R1 |
+| [ ] TEM-07 | Membership changes, departures, and replacements preserve authorship history and trigger a scope or schedule review. | R1 |
+| [ ] TEM-08 | Private peer feedback helps mentors investigate participation concerns; peers cannot deduct another student's XP directly. | R1 |
+| [ ] TEM-09 | Cross-discipline and cross-institution teams require compatible program terms, permissions, calendars, and mentor coverage. | R2 |
 
 ### 8.13 On-site, hybrid, and practical experiences
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| LOC-01 | Listings specify address or general area, attendance dates, travel expectations, supervisor, and remote alternatives where available. | R1 |
-| LOC-02 | Accessibility information and a private accommodation-request channel are available before the student commits. | R1 |
-| LOC-03 | Required preparation, site induction, equipment, protective gear, and task restrictions are disclosed and acknowledged. | R1 |
-| LOC-04 | Visit approval checks supervision, eligibility, agreements, and required training before confirming attendance. | R1 |
-| LOC-05 | Check-in and check-out support a simple code or supervisor confirmation with a manual fallback; continuous tracking is unnecessary. | R1 |
-| LOC-06 | Cancellation, lateness, travel interruption, and site closure trigger clear rescheduling and communication options. | R1 |
-| LOC-07 | Authorized coordinators can record an incident and contact the relevant supervisor; the app does not present itself as emergency dispatch. | R1 |
-| LOC-08 | Approved expense and travel-support terms are visible before acceptance, with a documented reimbursement process. | R1 |
-| LOC-09 | Hybrid projects clearly divide remote milestones from required visits and manage access to site-specific resources. | R1 |
-| LOC-10 | Shadowing and observation receive accurate participation labels and do not automatically count as evidence of independent practical competence. | R1 |
-| LOC-11 | Bookable lab, equipment, or maker-space sessions require qualified supervision and separate resource permissions. | R2 |
+| [ ] LOC-01 | Listings specify address or general area, attendance dates, travel expectations, supervisor, and remote alternatives where available. | R1 |
+| [ ] LOC-02 | Accessibility information and a private accommodation-request channel are available before the student commits. | R1 |
+| [ ] LOC-03 | Required preparation, site induction, equipment, protective gear, and task restrictions are disclosed and acknowledged. | R1 |
+| [ ] LOC-04 | Visit approval checks supervision, eligibility, agreements, and required training before confirming attendance. | R1 |
+| [ ] LOC-05 | Check-in and check-out support a simple code or supervisor confirmation with a manual fallback; continuous tracking is unnecessary. | R1 |
+| [ ] LOC-06 | Cancellation, lateness, travel interruption, and site closure trigger clear rescheduling and communication options. | R1 |
+| [ ] LOC-07 | Authorized coordinators can record an incident and contact the relevant supervisor; the app does not present itself as emergency dispatch. | R1 |
+| [ ] LOC-08 | Approved expense and travel-support terms are visible before acceptance, with a documented reimbursement process. | R1 |
+| [ ] LOC-09 | Hybrid projects clearly divide remote milestones from required visits and manage access to site-specific resources. | R1 |
+| [ ] LOC-10 | Shadowing and observation receive accurate participation labels and do not automatically count as evidence of independent practical competence. | R1 |
+| [ ] LOC-11 | Bookable lab, equipment, or maker-space sessions require qualified supervision and separate resource permissions. | R2 |
 
 ### 8.14 Company accounts and partner operations
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| ORG-01 | Company profiles explain the organization, industries, project interests, location, verified contact, and participation history. | M |
-| ORG-02 | Company administrators invite and remove authorized colleagues and assign project ownership without sharing credentials. | M |
-| ORG-03 | A company dashboard lists drafts, applications, active enrollments, pending reviews, and completed projects. | M |
-| ORG-04 | Ownership transfer preserves access continuity when a project owner or mentor leaves the organization. | M |
-| ORG-05 | Partner reporting summarizes participation, completion, student feedback, mentor effort, and approved output usefulness. | R1 |
-| ORG-06 | A project-design intake lets a company describe a challenge and request staff help turning it into a learning project. | M |
-| ORG-07 | Mentor capacity planning prevents publishing more supported places than the company can reasonably supervise. | R1 |
-| ORG-08 | Reusable organization templates standardize introductory materials, rubric examples, and portfolio approval rules. | R1 |
-| ORG-09 | Multiple departments or locations have explicit administrative boundaries and optional shared reporting. | R2 |
-| ORG-10 | Partner quality review can limit new postings or suspend participation while protecting current students and their evidence. | M |
+| [x] ORG-01 | Company profiles explain the organization, industries, project interests, location, verified contact, and participation history. | M |
+| [x] ORG-02 | Company administrators invite and remove authorized colleagues and assign project ownership without sharing credentials. | M |
+| [x] ORG-03 | A company dashboard lists drafts, applications, active enrollments, pending reviews, and completed projects. | M |
+| [x] ORG-04 | Ownership transfer preserves access continuity when a project owner or mentor leaves the organization. | M |
+| [ ] ORG-05 | Partner reporting summarizes participation, completion, student feedback, mentor effort, and approved output usefulness. | R1 |
+| [x] ORG-06 | A project-design intake lets a company describe a challenge and request staff help turning it into a learning project. | M |
+| [ ] ORG-07 | Mentor capacity planning prevents publishing more supported places than the company can reasonably supervise. | R1 |
+| [ ] ORG-08 | Reusable organization templates standardize introductory materials, rubric examples, and portfolio approval rules. | R1 |
+| [ ] ORG-09 | Multiple departments or locations have explicit administrative boundaries and optional shared reporting. | R2 |
+| [~] ORG-10 | Partner quality review can limit new postings or suspend participation while protecting current students and their evidence. | M |
 
 ### 8.15 Educator, course, and institution tools
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| EDU-01 | Pilot coordinators can maintain a roster and placement view through a limited staff-assisted workflow. | M |
-| EDU-02 | Educators create cohorts, invite learners, assign staff, set dates, and archive completed programs. | R1 |
-| EDU-03 | Learning outcomes map to project deliverables, rubric criteria, and demonstrated skills. | R1 |
-| EDU-04 | A cohort dashboard shows placements, milestone status, review delays, and students needing support. | R1 |
-| EDU-05 | Faculty can approve project suitability and track course-specific requirements separately from platform eligibility. | R1 |
-| EDU-06 | Academic reflections, rubrics, and grades have institution-defined visibility distinct from company assessments. | R1 |
-| EDU-07 | CSV roster import and grade or outcome export validate records and preview changes before applying them. | R1 |
-| EDU-08 | Placement management includes capacity allocation, waitlists, alternatives, and documented manual overrides. | R1 |
-| EDU-09 | Credit approval records the institution's decision and responsible official; the platform does not independently award credit. | R1 |
-| EDU-10 | Reports summarize learning outcomes, partner involvement, access, completion, and student feedback with small-group privacy protection. | R1 |
-| EDU-11 | Program configuration supports term calendars, holidays, approved extensions, and staff handoff between terms. | R1 |
-| EDU-12 | Institution-wide administration supports departments, contracts, data boundaries, access provisioning, and reporting scopes. | R2 |
-| EDU-13 | Cross-course recognition can reuse authorized evidence without counting the same project as a new industry completion. | R2 |
+| [x] EDU-01 | Pilot coordinators can maintain a roster and placement view through a limited staff-assisted workflow. | M |
+| [ ] EDU-02 | Educators create cohorts, invite learners, assign staff, set dates, and archive completed programs. | R1 |
+| [ ] EDU-03 | Learning outcomes map to project deliverables, rubric criteria, and demonstrated skills. | R1 |
+| [ ] EDU-04 | A cohort dashboard shows placements, milestone status, review delays, and students needing support. | R1 |
+| [ ] EDU-05 | Faculty can approve project suitability and track course-specific requirements separately from platform eligibility. | R1 |
+| [ ] EDU-06 | Academic reflections, rubrics, and grades have institution-defined visibility distinct from company assessments. | R1 |
+| [ ] EDU-07 | CSV roster import and grade or outcome export validate records and preview changes before applying them. | R1 |
+| [ ] EDU-08 | Placement management includes capacity allocation, waitlists, alternatives, and documented manual overrides. | R1 |
+| [ ] EDU-09 | Credit approval records the institution's decision and responsible official; the platform does not independently award credit. | R1 |
+| [ ] EDU-10 | Reports summarize learning outcomes, partner involvement, access, completion, and student feedback with small-group privacy protection. | R1 |
+| [ ] EDU-11 | Program configuration supports term calendars, holidays, approved extensions, and staff handoff between terms. | R1 |
+| [ ] EDU-12 | Institution-wide administration supports departments, contracts, data boundaries, access provisioning, and reporting scopes. | R2 |
+| [ ] EDU-13 | Cross-course recognition can reuse authorized evidence without counting the same project as a new industry completion. | R2 |
 
 ### 8.16 Career development and talent discovery
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| CAR-01 | Students connect target roles to relevant skill pathways and visible evidence gaps. | R1 |
-| CAR-02 | A portfolio builder helps select relevant projects and write accurate contribution statements for applications. | R1 |
-| CAR-03 | Recruiter discovery is opt-in and limited to published fields and authorized evidence. | R2 |
-| CAR-04 | Employers request introductions through controlled contact workflows; students can decline, block, or disable discovery. | R2 |
-| CAR-05 | Mentor recommendations and references are requested explicitly and show the actual relationship. | R1 |
-| CAR-06 | Internship or employment opportunities link to relevant project evidence without guaranteeing selection or inferring eligibility from a badge. | R2 |
-| CAR-07 | Students may report interviews, offers, and career outcomes voluntarily, with separate consent for reporting and publicity. | R1 |
-| CAR-08 | Mock interviews and career-preparation activities are labeled separately from live industry project achievements. | R2 |
+| [ ] CAR-01 | Students connect target roles to relevant skill pathways and visible evidence gaps. | R1 |
+| [ ] CAR-02 | A portfolio builder helps select relevant projects and write accurate contribution statements for applications. | R1 |
+| [ ] CAR-03 | Recruiter discovery is opt-in and limited to published fields and authorized evidence. | R2 |
+| [ ] CAR-04 | Employers request introductions through controlled contact workflows; students can decline, block, or disable discovery. | R2 |
+| [ ] CAR-05 | Mentor recommendations and references are requested explicitly and show the actual relationship. | R1 |
+| [ ] CAR-06 | Internship or employment opportunities link to relevant project evidence without guaranteeing selection or inferring eligibility from a badge. | R2 |
+| [ ] CAR-07 | Students may report interviews, offers, and career outcomes voluntarily, with separate consent for reporting and publicity. | R1 |
+| [ ] CAR-08 | Mock interviews and career-preparation activities are labeled separately from live industry project achievements. | R2 |
 
 ### 8.17 Notifications, scheduling, and reminders
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| NTF-01 | Email and in-app messages cover applications, offers, project updates, mentor replies, review decisions, and credentials. | M |
-| NTF-02 | Preferences separate essential account or active-project messages from optional discovery and community updates. | M |
-| NTF-03 | Timezone-aware due dates and quiet hours prevent misleading deadlines and unnecessary overnight reminders. | M |
-| NTF-04 | Notifications deep-link to the authorized action and omit confidential file contents from previews. | M |
-| NTF-05 | Duplicate-event suppression prevents repeated emails or reminders after retry, resubmission, or already-completed work. | M |
-| NTF-06 | A notification center tracks read state and pending actions while preserving access to past decisions. | M |
-| NTF-07 | Daily or weekly digests summarize non-urgent opportunities and activity according to user preference. | R1 |
-| NTF-08 | Calendar integration supports availability, meeting changes, timezone conversion, and cancellation synchronization. | R1 |
-| NTF-09 | Push notifications are opt-in and respect the same quiet-hours and confidentiality settings. | R2 |
-| NTF-10 | Overdue rules account for approved pauses, holidays, revised deadlines, and an assigned backup reviewer. | M |
+| [x] NTF-01 | Email and in-app messages cover applications, offers, project updates, mentor replies, review decisions, and credentials. | M |
+| [x] NTF-02 | Preferences separate essential account or active-project messages from optional discovery and community updates. | M |
+| [x] NTF-03 | Timezone-aware due dates and quiet hours prevent misleading deadlines and unnecessary overnight reminders. | M |
+| [x] NTF-04 | Notifications deep-link to the authorized action and omit confidential file contents from previews. | M |
+| [x] NTF-05 | Duplicate-event suppression prevents repeated emails or reminders after retry, resubmission, or already-completed work. | M |
+| [x] NTF-06 | A notification center tracks read state and pending actions while preserving access to past decisions. | M |
+| [ ] NTF-07 | Daily or weekly digests summarize non-urgent opportunities and activity according to user preference. | R1 |
+| [ ] NTF-08 | Calendar integration supports availability, meeting changes, timezone conversion, and cancellation synchronization. | R1 |
+| [ ] NTF-09 | Push notifications are opt-in and respect the same quiet-hours and confidentiality settings. | R2 |
+| [~] NTF-10 | Overdue rules account for approved pauses, holidays, revised deadlines, and an assigned backup reviewer. | M |
 
 ### 8.18 Administration, moderation, and support
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| OPS-01 | Staff queues cover organization verification, project approval, mentor coverage, stalled work, and credential disputes. | M |
-| OPS-02 | Users can report conduct, misleading listings, inappropriate requests, or confidentiality concerns from relevant screens. | M |
-| OPS-03 | Case management records the owner, status, evidence access, actions, communication, and resolution. | M |
-| OPS-04 | Blocking or contact restrictions prevent unwanted direct communication while preserving a supported reassignment path for active projects. | M |
-| OPS-05 | Staff can pause a project, replace an authorized mentor, extend a deadline, or close participation with an audited reason. | M |
-| OPS-06 | Skill names, aliases, rubric templates, and credential rules are curated and versioned through restricted tools. | M |
-| OPS-07 | Credential issuance, corrections, revocation, account restrictions, and sensitive staff access leave an audit trail. | M |
-| OPS-08 | Help pages cover getting started, project expectations, assessment, sharing permissions, and common account issues. | M |
-| OPS-09 | Support requests carry relevant context only with authorized access; users receive a ticket reference and status. | M |
-| OPS-10 | Retention, export, deletion, and access requests have a documented operations process and accountable owner. | M |
-| OPS-11 | Operational dashboards monitor supply, unfilled places, mentor burden, review backlogs, and incident trends. | R1 |
-| OPS-12 | Feature flags, staged releases, and reversible configuration allow safe pilot changes without silently altering accepted project terms. | R1 |
-| OPS-13 | Appeals are reviewed by someone appropriately independent of the disputed decision, with reasons recorded. | M |
+| [x] OPS-01 | Staff queues cover organization verification, project approval, mentor coverage, stalled work, and credential disputes. | M |
+| [x] OPS-02 | Users can report conduct, misleading listings, inappropriate requests, or confidentiality concerns from relevant screens. | M |
+| [x] OPS-03 | Case management records the owner, status, evidence access, actions, communication, and resolution. | M |
+| [ ] OPS-04 | Blocking or contact restrictions prevent unwanted direct communication while preserving a supported reassignment path for active projects. | M |
+| [x] OPS-05 | Staff can pause a project, replace an authorized mentor, extend a deadline, or close participation with an audited reason. | M |
+| [ ] OPS-06 | Skill names, aliases, rubric templates, and credential rules are curated and versioned through restricted tools. | M |
+| [x] OPS-07 | Credential issuance, corrections, revocation, account restrictions, and sensitive staff access leave an audit trail. | M |
+| [ ] OPS-08 | Help pages cover getting started, project expectations, assessment, sharing permissions, and common account issues. | M |
+| [x] OPS-09 | Support requests carry relevant context only with authorized access; users receive a ticket reference and status. | M |
+| [~] OPS-10 | Retention, export, deletion, and access requests have a documented operations process and accountable owner. | M |
+| [ ] OPS-11 | Operational dashboards monitor supply, unfilled places, mentor burden, review backlogs, and incident trends. | R1 |
+| [ ] OPS-12 | Feature flags, staged releases, and reversible configuration allow safe pilot changes without silently altering accepted project terms. | R1 |
+| [x] OPS-13 | Appeals are reviewed by someone appropriately independent of the disputed decision, with reasons recorded. | M |
 
 ### 8.19 AI assistance and automation
 
@@ -667,74 +696,74 @@ AI is an optional support layer. The core product and all initial pilot workflow
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| AID-01 | Brief assistance proposes a smaller scope, milestones, and learning outcomes for a company author to approve. | R1 |
-| AID-02 | A student assistant explains terms, suggests next steps, and asks guiding questions under the project's declared AI policy. | R2 |
-| AID-03 | Feedback drafting helps mentors write clearer comments while the mentor remains responsible for every assessment. | R2 |
-| AID-04 | Portfolio drafting uses only approved evidence and asks the student to confirm contribution claims before publication. | R1 |
-| AID-05 | Skill-tag suggestions are reviewed by an authorized human before influencing credential or eligibility rules. | R1 |
-| AID-06 | Meeting or discussion summaries require appropriate participant permission and respect artifact confidentiality. | R2 |
-| AID-07 | Users see what information is sent to an AI service and can use core workflows without optional AI processing. | R1 |
-| AID-08 | AI output cannot independently accept work, assign mastery, revoke credentials, reject applicants, or determine misconduct. | R1 |
-| AID-09 | AI actions preserve source references and show uncertainty; unsafe instructions embedded in project material are treated as untrusted content. | R1 |
-| AID-10 | Adaptive pathways and simulated mentors are research experiments; simulations cannot impersonate a real assigned professional. | X |
+| [ ] AID-01 | Brief assistance proposes a smaller scope, milestones, and learning outcomes for a company author to approve. | R1 |
+| [ ] AID-02 | A student assistant explains terms, suggests next steps, and asks guiding questions under the project's declared AI policy. | R2 |
+| [ ] AID-03 | Feedback drafting helps mentors write clearer comments while the mentor remains responsible for every assessment. | R2 |
+| [ ] AID-04 | Portfolio drafting uses only approved evidence and asks the student to confirm contribution claims before publication. | R1 |
+| [ ] AID-05 | Skill-tag suggestions are reviewed by an authorized human before influencing credential or eligibility rules. | R1 |
+| [ ] AID-06 | Meeting or discussion summaries require appropriate participant permission and respect artifact confidentiality. | R2 |
+| [ ] AID-07 | Users see what information is sent to an AI service and can use core workflows without optional AI processing. | R1 |
+| [ ] AID-08 | AI output cannot independently accept work, assign mastery, revoke credentials, reject applicants, or determine misconduct. | R1 |
+| [ ] AID-09 | AI actions preserve source references and show uncertainty; unsafe instructions embedded in project material are treated as untrusted content. | R1 |
+| [ ] AID-10 | Adaptive pathways and simulated mentors are research experiments; simulations cannot impersonate a real assigned professional. | X |
 
 ### 8.20 Payments, billing, and incentives
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| PAY-01 | Every live listing states paid, stipend-supported, unpaid, or course-associated participation accurately; compensation amount and conditions are explicit. | M |
-| PAY-02 | Pilot administrators record the agreed external compensation or expense process and its responsible organization. | M |
-| PAY-03 | Institution subscriptions support contracted seats or programs, billing contacts, entitlements, and understandable renewal terms. | R2 |
-| PAY-04 | Company plans can fund program support or mentor coordination without buying higher student ratings or preferential verification. | R2 |
-| PAY-05 | Later payout integration tracks agreed compensation, approval, payment status, failure handling, and support ownership. | R2 |
-| PAY-06 | Reimbursements capture receipts, approval, status, and a clear dispute route within the chosen payment process. | R2 |
-| PAY-07 | Sponsor-funded beginner places and travel support use published selection criteria and visible sponsor attribution. | R1 |
-| PAY-08 | Discounts, invoicing, refunds, and subscription cancellation follow explicit product terms and preserve earned student evidence. | R2 |
-| PAY-09 | Student payment cannot purchase mastery, reviews, rankings, prerequisite waivers, or basic access to their own verified record. | M |
+| [x] PAY-01 | Every live listing states paid, stipend-supported, unpaid, or course-associated participation accurately; compensation amount and conditions are explicit. | M |
+| [x] PAY-02 | Pilot administrators record the agreed external compensation or expense process and its responsible organization. | M |
+| [ ] PAY-03 | Institution subscriptions support contracted seats or programs, billing contacts, entitlements, and understandable renewal terms. | R2 |
+| [ ] PAY-04 | Company plans can fund program support or mentor coordination without buying higher student ratings or preferential verification. | R2 |
+| [ ] PAY-05 | Later payout integration tracks agreed compensation, approval, payment status, failure handling, and support ownership. | R2 |
+| [ ] PAY-06 | Reimbursements capture receipts, approval, status, and a clear dispute route within the chosen payment process. | R2 |
+| [ ] PAY-07 | Sponsor-funded beginner places and travel support use published selection criteria and visible sponsor attribution. | R1 |
+| [ ] PAY-08 | Discounts, invoicing, refunds, and subscription cancellation follow explicit product terms and preserve earned student evidence. | R2 |
+| [x] PAY-09 | Student payment cannot purchase mastery, reviews, rankings, prerequisite waivers, or basic access to their own verified record. | M |
 
 ### 8.21 Integrations and interoperability
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| INT-01 | Approved external file, repository, notebook, design, and meeting links can be attached without importing unrelated account data. | M |
-| INT-02 | Email delivery, identity, and file storage services expose failure status to operations and support retry or recovery. | M |
-| INT-03 | Calendar connections request limited permissions and support disconnection without removing past project records. | R1 |
-| INT-04 | Repository and cloud-document connections capture specific authorized evidence versions rather than assuming all account content is shareable. | R1 |
-| INT-05 | Learning management system integrations support agreed roster, assignment, outcome, and grade flows with explicit mappings. | R2 |
-| INT-06 | Employer applicant-tracking exports require student consent and contain only selected profile and evidence fields. | R2 |
-| INT-07 | Professional-network sharing creates an accurate public link or export; it does not publish on a student's behalf without confirmation. | R1 |
-| INT-08 | Scoped APIs and signed webhooks support authorized partners, documented versions, retries, and duplicate handling. | R2 |
-| INT-09 | Integration settings show connected accounts, granted access, last sync, errors, and revoke controls. | R1 |
-| INT-10 | Imported records retain origin and verification status; import does not convert external claims into platform-reviewed work. | R1 |
+| [x] INT-01 | Approved external file, repository, notebook, design, and meeting links can be attached without importing unrelated account data. | M |
+| [x] INT-02 | Email delivery, identity, and file storage services expose failure status to operations and support retry or recovery. | M |
+| [ ] INT-03 | Calendar connections request limited permissions and support disconnection without removing past project records. | R1 |
+| [ ] INT-04 | Repository and cloud-document connections capture specific authorized evidence versions rather than assuming all account content is shareable. | R1 |
+| [ ] INT-05 | Learning management system integrations support agreed roster, assignment, outcome, and grade flows with explicit mappings. | R2 |
+| [ ] INT-06 | Employer applicant-tracking exports require student consent and contain only selected profile and evidence fields. | R2 |
+| [ ] INT-07 | Professional-network sharing creates an accurate public link or export; it does not publish on a student's behalf without confirmation. | R1 |
+| [ ] INT-08 | Scoped APIs and signed webhooks support authorized partners, documented versions, retries, and duplicate handling. | R2 |
+| [ ] INT-09 | Integration settings show connected accounts, granted access, last sync, errors, and revoke controls. | R1 |
+| [ ] INT-10 | Imported records retain origin and verification status; import does not convert external claims into platform-reviewed work. | R1 |
 
 ### 8.22 Mobile, accessibility, and everyday usability
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| EXP-01 | Responsive layouts support project discovery, discussion, review status, and profile sharing on common mobile and desktop screens. | M |
-| EXP-02 | Core workflows support keyboard navigation, screen readers, visible focus, meaningful labels, and accessible error recovery. | M |
-| EXP-03 | Status is not communicated through color alone; charts and progress views provide a text equivalent. | M |
-| EXP-04 | Reduced-motion controls, readable typography, sufficient contrast, and scalable layouts support varied user needs. | M |
-| EXP-05 | Dates, times, file sizes, and deadline timezones are explicit; ambiguous dates are avoided. | M |
-| EXP-06 | Confirmation and undo patterns protect withdrawal, deletion, publication, and other consequential actions where feasible. | M |
-| EXP-07 | Loading, empty, stale, permission-denied, and failed-action states explain a practical next step. | M |
-| EXP-08 | Saved drafts and clear upload progress support unstable connections and warn before losing unsaved work. | M |
-| EXP-09 | Language localization covers interface, notification, date, and number formats without altering the meaning of assessment criteria. | R2 |
-| EXP-10 | Installable web-app and limited offline reading can improve repeat use; offline actions synchronize with conflict handling. | R2 |
-| EXP-11 | Native mobile apps are evaluated only if actual student and mentor behavior justifies the maintenance cost. | X |
+| [x] EXP-01 | Responsive layouts support project discovery, discussion, review status, and profile sharing on common mobile and desktop screens. | M |
+| [x] EXP-02 | Core workflows support keyboard navigation, screen readers, visible focus, meaningful labels, and accessible error recovery. | M |
+| [x] EXP-03 | Status is not communicated through color alone; charts and progress views provide a text equivalent. | M |
+| [x] EXP-04 | Reduced-motion controls, readable typography, sufficient contrast, and scalable layouts support varied user needs. | M |
+| [x] EXP-05 | Dates, times, file sizes, and deadline timezones are explicit; ambiguous dates are avoided. | M |
+| [x] EXP-06 | Confirmation and undo patterns protect withdrawal, deletion, publication, and other consequential actions where feasible. | M |
+| [x] EXP-07 | Loading, empty, stale, permission-denied, and failed-action states explain a practical next step. | M |
+| [x] EXP-08 | Saved drafts and clear upload progress support unstable connections and warn before losing unsaved work. | M |
+| [ ] EXP-09 | Language localization covers interface, notification, date, and number formats without altering the meaning of assessment criteria. | R2 |
+| [ ] EXP-10 | Installable web-app and limited offline reading can improve repeat use; offline actions synchronize with conflict handling. | R2 |
+| [ ] EXP-11 | Native mobile apps are evaluated only if actual student and mentor behavior justifies the maintenance cost. | X |
 
 ### 8.23 Reporting and analytics
 
 | ID | Feature and required behavior | Release |
 | --- | --- | --- |
-| ANL-01 | Product events measure discovery, application, enrollment, feedback, completion, and repeat participation with defined denominators. | M |
-| ANL-02 | Pilot reports join opportunity supply, student progress, mentor effort, and company feedback without exposing private work. | M |
-| ANL-03 | Students see personal progress and evidence gaps without needing comparative ranking. | M |
-| ANL-04 | Partner dashboards show permitted organization or cohort results with minimum-group privacy safeguards. | R1 |
-| ANL-05 | Funnel views distinguish availability failures, eligibility failures, selection outcomes, and delivery problems. | R1 |
-| ANL-06 | Assessment quality reports compare rubric coverage, revision rates, review delays, and appeal outcomes. | R1 |
-| ANL-07 | Experiments track learning and fairness guardrails alongside engagement; rule changes do not retroactively invalidate accepted work. | R1 |
-| ANL-08 | Aggregated supply-demand insights help recruit projects in underserved skills, schedules, or locations. | R2 |
+| [x] ANL-01 | Product events measure discovery, application, enrollment, feedback, completion, and repeat participation with defined denominators. | M |
+| [x] ANL-02 | Pilot reports join opportunity supply, student progress, mentor effort, and company feedback without exposing private work. | M |
+| [x] ANL-03 | Students see personal progress and evidence gaps without needing comparative ranking. | M |
+| [ ] ANL-04 | Partner dashboards show permitted organization or cohort results with minimum-group privacy safeguards. | R1 |
+| [ ] ANL-05 | Funnel views distinguish availability failures, eligibility failures, selection outcomes, and delivery problems. | R1 |
+| [ ] ANL-06 | Assessment quality reports compare rubric coverage, revision rates, review delays, and appeal outcomes. | R1 |
+| [ ] ANL-07 | Experiments track learning and fairness guardrails alongside engagement; rule changes do not retroactively invalidate accepted work. | R1 |
+| [ ] ANL-08 | Aggregated supply-demand insights help recruit projects in underserved skills, schedules, or locations. | R2 |
 
 ## 9. Project specification and quality requirements
 
@@ -1298,28 +1327,28 @@ Record these actions in authorized product or operations records so later automa
 
 | ID | Scenario | Required result |
 | --- | --- | --- |
-| AC-01 | A student joins with no university affiliation or prior industry work | Can create an account and apply to open beginner projects; restricted programs explain their own requirements |
-| AC-02 | A company attempts to publish without a mentor, rubric, or explicit compensation terms | Publication is blocked with a specific correction request |
-| AC-03 | Two actions attempt to reserve the last project place concurrently | At most one reservation succeeds; the other receives an accurate capacity response |
-| AC-04 | An offer expires or is declined | Its reservation releases once; the project can offer the place again |
-| AC-05 | A student accepts an offer | The exact brief, rubric, reward rules, terms, and mentor arrangement are recorded |
-| AC-06 | A company changes material scope after acceptance | The old agreement remains visible; the change requires participant consent before taking effect |
-| AC-07 | A file upload or submission is interrupted | The student can recover or retry without losing the prior accepted version or duplicating submission state |
-| AC-08 | An unrelated student, former mentor, or different company requests a protected artifact | Access is denied by server-side checks, including direct file and export routes |
-| AC-09 | A mentor requests a revision | Student sees specific requirements and an agreed deadline; earlier evidence remains available to authorized reviewers |
-| AC-10 | The same completion event is processed twice | One qualifying credential issuance and one base XP award are created |
-| AC-11 | A student completes a Q1 project supporting a new skill | Receives 120 XP, an eligible completion record, and Emerging status only if the skill criterion qualifies |
-| AC-12 | A student has abundant XP but lacks a project's required skill evidence | The project explains the missing requirement and a route forward; XP does not override it |
-| AC-13 | A mentor misses the review target | Operations receives an escalation; the student receives no automatic failure or XP deduction |
-| AC-14 | A student publishes a confidential project's credential | Only the approved public summary and permitted identity fields appear; private evidence remains inaccessible |
-| AC-15 | A credential is corrected or revoked after an authorized decision | Verification and derived XP/mastery update consistently; the student receives reasons and an appeal route |
-| AC-16 | The student's university email or membership expires | The student can retain their personal account and authorized earned record through verified recovery or alternate contact |
-| AC-17 | Credential issuance fails after assessment acceptance | Completion remains accepted, issuance shows pending, and retry cannot duplicate rewards |
-| AC-18 | A student withdraws, pauses with approval, or reports a company problem | No automatic public negative rating is created; staff can provide an appropriate resolution |
-| AC-19 | A student changes privacy settings or revokes a share link | New access reflects the change across profile, search, verification links, and protected downloads |
-| AC-20 | A user completes the core flow with keyboard and assistive technology | Registration, discovery, application, submission, feedback, and sharing remain understandable and operable |
-| AC-21 | Operations excludes demo, revoked, and ineligible records from reporting | Metric counts match the documented definitions and can be traced to source records |
-| AC-22 | A student qualifies through approved alternative evidence | The eligibility exception is recorded without falsely issuing a platform-earned skill credential |
+| [x] AC-01 | A student joins with no university affiliation or prior industry work | Can create an account and apply to open beginner projects; restricted programs explain their own requirements |
+| [x] AC-02 | A company attempts to publish without a mentor, rubric, or explicit compensation terms | Publication is blocked with a specific correction request |
+| [x] AC-03 | Two actions attempt to reserve the last project place concurrently | At most one reservation succeeds; the other receives an accurate capacity response |
+| [x] AC-04 | An offer expires or is declined | Its reservation releases once; the project can offer the place again |
+| [x] AC-05 | A student accepts an offer | The exact brief, rubric, reward rules, terms, and mentor arrangement are recorded |
+| [x] AC-06 | A company changes material scope after acceptance | The old agreement remains visible; the change requires participant consent before taking effect |
+| [x] AC-07 | A file upload or submission is interrupted | The student can recover or retry without losing the prior accepted version or duplicating submission state |
+| [x] AC-08 | An unrelated student, former mentor, or different company requests a protected artifact | Access is denied by server-side checks, including direct file and export routes |
+| [x] AC-09 | A mentor requests a revision | Student sees specific requirements and an agreed deadline; earlier evidence remains available to authorized reviewers |
+| [x] AC-10 | The same completion event is processed twice | One qualifying credential issuance and one base XP award are created |
+| [x] AC-11 | A student completes a Q1 project supporting a new skill | Receives 120 XP, an eligible completion record, and Emerging status only if the skill criterion qualifies |
+| [x] AC-12 | A student has abundant XP but lacks a project's required skill evidence | The project explains the missing requirement and a route forward; XP does not override it |
+| [x] AC-13 | A mentor misses the review target | Operations receives an escalation; the student receives no automatic failure or XP deduction |
+| [x] AC-14 | A student publishes a confidential project's credential | Only the approved public summary and permitted identity fields appear; private evidence remains inaccessible |
+| [x] AC-15 | A credential is corrected or revoked after an authorized decision | Verification and derived XP/mastery update consistently; the student receives reasons and an appeal route |
+| [x] AC-16 | The student's university email or membership expires | The student can retain their personal account and authorized earned record through verified recovery or alternate contact |
+| [x] AC-17 | Credential issuance fails after assessment acceptance | Completion remains accepted, issuance shows pending, and retry cannot duplicate rewards |
+| [x] AC-18 | A student withdraws, pauses with approval, or reports a company problem | No automatic public negative rating is created; staff can provide an appropriate resolution |
+| [x] AC-19 | A student changes privacy settings or revokes a share link | New access reflects the change across profile, search, verification links, and protected downloads |
+| [x] AC-20 | A user completes the core flow with keyboard and assistive technology | Registration, discovery, application, submission, feedback, and sharing remain understandable and operable |
+| [x] AC-21 | Operations excludes demo, revoked, and ineligible records from reporting | Metric counts match the documented definitions and can be traced to source records |
+| [x] AC-22 | A student qualifies through approved alternative evidence | The eligibility exception is recorded without falsely issuing a platform-earned skill credential |
 
 ### 22.2 Additional gates for later features
 
