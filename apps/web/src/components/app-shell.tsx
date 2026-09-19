@@ -51,6 +51,9 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
   return (
     <TooltipProvider delayDuration={0}>
     <SidebarProvider defaultOpen={open}>
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-background focus:p-2 focus:shadow">
+        Skip to content
+      </a>
       <AppSidebar groups={groups} user={{ name: user.name, email: user.email }} demo={isDemo()} hasProfile={roles.isStudent} />
       <SidebarInset id="main">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur">

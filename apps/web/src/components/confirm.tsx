@@ -25,7 +25,7 @@ export function ConfirmSubmit({ formId, name, value, ask, children, ...button }:
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction asChild>
             <button type="submit" form={formId} name={name} value={value}
-              className={ask.destructive ? "bg-destructive text-white hover:bg-destructive/90" : undefined}>
+              className={ask.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}>
               {ask.confirm}
             </button>
           </AlertDialogAction>

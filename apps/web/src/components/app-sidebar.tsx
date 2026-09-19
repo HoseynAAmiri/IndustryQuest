@@ -70,7 +70,7 @@ export function AppSidebar({ groups, user, demo, hasProfile }: { groups: NavGrou
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent group-data-[collapsible=icon]:p-0!">
-                  <Avatar className="size-8 shrink-0 rounded-md"><AvatarFallback className="rounded-md bg-primary/10 text-primary">{initials(user.name)}</AvatarFallback></Avatar>
+                  <Avatar className="size-8 shrink-0 rounded-md"><AvatarFallback className="rounded-md bg-primary/10 text-accent-foreground">{initials(user.name)}</AvatarFallback></Avatar>
                   <span className="grid flex-1 text-left leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
                     <span className="truncate text-xs text-muted-foreground">{user.email}</span>

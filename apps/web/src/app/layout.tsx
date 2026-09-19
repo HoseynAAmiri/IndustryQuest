@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const session = await getSession();
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} bg-background`} suppressHydrationWarning>
       <body className="min-h-screen bg-muted/40 font-sans text-foreground antialiased">
         <ThemeProvider>
           {session ? (

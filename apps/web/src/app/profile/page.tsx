@@ -81,7 +81,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
 
       <Card className="mb-6">
         <CardHeader className="flex flex-wrap items-center gap-4">
-          <Avatar className="size-14">{me.image && <AvatarImage src={`/api/avatar/${me.id}`} alt="" />}<AvatarFallback className="bg-primary/10 text-lg text-primary">{initials(me.name)}</AvatarFallback></Avatar>
+          <Avatar className="size-14">{me.image && <AvatarImage src={`/api/avatar/${me.id}`} alt="" />}<AvatarFallback className="bg-primary/10 text-lg text-accent-foreground">{initials(me.name)}</AvatarFallback></Avatar>
           <div className="min-w-0 flex-1">
             <CardTitle className="text-xl">{me.name}</CardTitle>
             <CardDescription>{[profile.pronouns, profile.discipline].filter(Boolean).join(" · ") || me.email}</CardDescription>

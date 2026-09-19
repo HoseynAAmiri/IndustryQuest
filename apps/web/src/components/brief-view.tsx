@@ -54,7 +54,7 @@ export function BriefView({ b, mentorName, orgName, skillNames, restricted = fal
         <ol className="grid gap-3">
           {b.milestones.map((m, i) => (
             <li key={m.title} className="flex items-start gap-3">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{i + 1}</span>
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-accent-foreground">{i + 1}</span>
               <span>{m.title} <span className="text-muted-foreground">· day {m.dueInDays}</span></span>
             </li>
           ))}
@@ -114,11 +114,12 @@ export function BriefView({ b, mentorName, orgName, skillNames, restricted = fal
   );
 }
 
+// dl > div > (dt, dd) only, so the icon lives inside the dt.
 function Fact({ icon: Icon, label, children }: { icon: typeof Clock; label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-3">
-      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-      <div><dt className="text-sm text-muted-foreground">{label}</dt><dd className="font-medium">{children}</dd></div>
+    <div>
+      <dt className="flex items-center gap-2 text-sm text-muted-foreground"><Icon className="size-4 shrink-0" aria-hidden />{label}</dt>
+      <dd className="pl-6 font-medium">{children}</dd>
     </div>
   );
 }

@@ -191,7 +191,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
             </Card>
           </TabsContent>
 
-          <TabsContent value="discussion" id="discussion" className="mt-4">
+          <TabsContent value="discussion" className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base"><MessageSquare className="size-4" /> Project discussion</CardTitle>
@@ -233,7 +233,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
             </Card>
           </TabsContent>
 
-          <TabsContent value="files" id="files" className="mt-4">
+          <TabsContent value="files" className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Files and links</CardTitle>
