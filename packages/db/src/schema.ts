@@ -65,6 +65,21 @@ export const organizations = pgTable("organizations", {
   description: text("description").notNull().default(""),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   verifiedBy: text("verified_by").references(() => user.id),
+  verificationNote: text("verification_note"), // ACC-06: what staff actually checked
+  isDemo: boolean("is_demo").notNull().default(false), // kept out of reports unless asked for (AC-21)
+  createdAt: created(),
+});
+
+// MEN-01/03: mentor's professional context and how many students they can take.
+export const mentorProfiles = pgTable("mentor_profiles", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  headline: text("headline").notNull().default(""),
+  expertise: text("expertise").array().notNull().default(sql`'{}'::text[]`),
+  capacity: integer("capacity").notNull().default(3),
+  timezone: text("timezone").notNull().default("UTC"),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  verifiedBy: text("verified_by").references(() => user.id),
+  verificationNote: text("verification_note"),
   createdAt: created(),
 });
 
@@ -90,6 +105,9 @@ export const studentProfiles = pgTable("student_profiles", {
   goals: text("goals").notNull().default(""),
   weeklyHours: integer("weekly_hours").notNull().default(0),
   timezone: text("timezone").notNull().default("UTC"),
+  participation: text("participation", { enum: ["remote", "hybrid", "onsite", "any"] }).notNull().default("remote"), // ACC-03
+  extraActiveSlots: integer("extra_active_slots").notNull().default(0), // ENR-07 staff exception
+  extraSlotsReason: text("extra_slots_reason"),
   createdAt: created(),
 });
 
@@ -279,6 +297,7 @@ export const skillEvidence = pgTable(
     assessmentId: uuid("assessment_id").notNull().references(() => assessments.id),
     assessorId: text("assessor_id").notNull().references(() => user.id),
     score: integer("score").notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }), // AC-15: excluded from tiers once revoked
     createdAt: created(),
   },
   (t) => [uniqueIndex("skill_evidence_enrollment_skill").on(t.enrollmentId, t.skillId)],
@@ -348,7 +367,7 @@ export const auditEvents = pgTable("audit_events", {
 // ── Cases: blockers, extensions, reports, support and appeals (WRK-06, OPS-02/03/09/13, ASM-08) ──
 // Private to the reporter and staff. Opening one never changes the student's record by itself.
 
-export const caseType = pgEnum("case_type", ["blocker", "extension", "conduct", "support", "appeal"]);
+export const caseType = pgEnum("case_type", ["blocker", "extension", "conduct", "support", "appeal", "equivalency"]);
 export const caseStatus = pgEnum("case_status", ["open", "in_progress", "resolved"]);
 
 export const cases = pgTable("cases", {
@@ -360,6 +379,7 @@ export const cases = pgTable("cases", {
   enrollmentId: uuid("enrollment_id").references(() => enrollments.id),
   summary: text("summary").notNull(),
   requestedDays: integer("requested_days"),
+  skillId: text("skill_id").references(() => skills.id), // for equivalency requests
   ownerId: text("owner_id").references(() => user.id),
   dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
   resolution: text("resolution"),
@@ -376,3 +396,19 @@ export const caseUpdates = pgTable("case_updates", {
   body: text("body").notNull(),
   createdAt: created(),
 });
+
+// ENR-09, AC-22: staff accepted outside evidence for a prerequisite. Counts for eligibility only;
+// it never creates a credential or a platform skill tier.
+export const equivalencies = pgTable(
+  "equivalencies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    skillId: text("skill_id").notNull().references(() => skills.id),
+    evidence: text("evidence").notNull(),
+    grantedBy: text("granted_by").notNull().references(() => user.id),
+    caseId: uuid("case_id").references(() => cases.id),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex("equivalencies_user_skill").on(t.userId, t.skillId)],
+);

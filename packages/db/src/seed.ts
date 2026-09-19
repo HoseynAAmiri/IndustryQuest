@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { TIER_XP, briefSchema, type Brief, type Criterion } from "@iq/core";
 import {
-  DEMO_PASSWORD, DEMO_PERSONAS, account, briefVersions, connect, memberships, organizations, projects, skillClaims, skills, studentProfiles, user,
+  DEMO_PASSWORD, DEMO_PERSONAS, account, briefVersions, connect, memberships, mentorProfiles, organizations, projects, skillClaims, skills, studentProfiles, user,
 } from "./index.ts";
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed a production database.");
@@ -51,9 +51,17 @@ await db.insert(skillClaims).values([
   { userId: "s-dev", skillId: "python-data", level: "practical", note: "Part-time data assistant" },
 ]);
 
+await db.insert(mentorProfiles).values([
+  { userId: "u-mentor", headline: "Reliability engineer, 9 years in rotating equipment", expertise: ["vibration analysis", "Python", "data cleaning"],
+    capacity: 4, timezone: "Europe/London", verifiedAt: new Date(), verifiedBy: "u-staff", verificationNote: "Employment confirmed with the Northwind owner; reference call held." },
+  { userId: "u-mentor2", headline: "Data scientist, forecasting and technical writing", expertise: ["forecasting", "signal analysis", "technical writing"],
+    capacity: 3, timezone: "Europe/Berlin" },
+]);
+
 // ── Organizations ──
 async function org(name: string, description: string, owner: string, mentors: string[], verified: boolean) {
-  const [o] = await db.insert(organizations).values({ name, description, verifiedAt: verified ? new Date() : null, verifiedBy: verified ? "u-staff" : null }).returning();
+  const [o] = await db.insert(organizations).values({ name, description, isDemo: true, verifiedAt: verified ? new Date() : null, verifiedBy: verified ? "u-staff" : null,
+    verificationNote: verified ? "Checked the (fictional) company register entry and the owner's work email." : null }).returning();
   await db.insert(memberships).values([
     { userId: owner, orgId: o.id, role: "owner" as const },
     ...mentors.map((m) => ({ userId: m, orgId: o.id, role: "mentor" as const })),

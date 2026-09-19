@@ -2,7 +2,7 @@ import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { SEAT_STATES, checkEligibility, nextEnrollment } from "@iq/core";
 import { briefVersions, enrollments, milestones, projects, studentProfiles, type Db } from "@iq/db";
 import { assertOrgRole, type Actor } from "./authz";
-import { seatsTaken, studentTiers } from "./discovery";
+import { eligibilityTiers, seatsTaken } from "./discovery";
 import { Forbidden, UserError } from "./errors";
 import { audit, notify, notifyAll, ownersOf, track } from "./notify";
 
@@ -35,7 +35,7 @@ export async function apply(db: Db, actor: Actor, input: { projectId: string; mo
     .innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId)).where(eq(projects.id, input.projectId));
   if (!row || row.p.state !== "published") throw new UserError("This project isn't taking applications.");
   if (row.v.content.applyDeadline < new Date().toISOString().slice(0, 10)) throw new UserError("The application deadline has passed.");
-  const { eligible } = checkEligibility(row.v.content.prerequisites, await studentTiers(db, actor.id));
+  const { eligible } = checkEligibility(row.v.content.prerequisites, await eligibilityTiers(db, actor.id));
   if (!eligible) throw new UserError("You don't have the required skill evidence for this project yet.");
   const motivation = input.motivation.trim();
   if (motivation.length < 20) throw new UserError("Tell the company a little more about why you want this project (20 characters or more).");
@@ -110,7 +110,8 @@ export async function respondToOffer(db: Db, actor: Actor, input: { enrollmentId
     await tx.execute(sql`select id from ${projects} where id = ${e.projectId} for update`);
     const [{ n }] = await tx.select({ n: sql<number>`count(*)::int` }).from(enrollments)
       .where(and(eq(enrollments.studentId, actor.id), inArray(enrollments.state, [...SEAT_STATES])));
-    if (n >= ACTIVE_LIMIT) throw new UserError(`You already have ${n} active projects. Finish or withdraw from one first, or ask staff for an exception.`);
+    const [sp] = await tx.select({ extra: studentProfiles.extraActiveSlots }).from(studentProfiles).where(eq(studentProfiles.userId, actor.id));
+    if (n >= ACTIVE_LIMIT + (sp?.extra ?? 0)) throw new UserError(`You already have ${n} active projects. Finish or withdraw from one first, or ask staff for an exception.`);
     const now = new Date();
     await tx.update(enrollments).set({ state: nextEnrollment(e.state, "acceptOffer"), acceptedAt: now, mentorId: v.mentorId, updatedAt: now })
       .where(eq(enrollments.id, e.id));

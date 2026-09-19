@@ -1,7 +1,7 @@
-import { and, desc, eq, gt, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { SEAT_STATES, explainFit, tierFor, type Tier } from "@iq/core";
 import {
-  briefVersions, enrollments, organizations, projects, savedProjects, skillEvidence, skills, studentProfiles, user, type Db, type Tx,
+  briefVersions, enrollments, equivalencies, organizations, projects, savedProjects, skillEvidence, skills, studentProfiles, user, type Db, type Tx,
 } from "@iq/db";
 import type { Actor } from "./authz";
 import { UserError } from "./errors";
@@ -20,9 +20,18 @@ export async function seatsTaken(db: Db | Tx, projectIds: string[]) {
 
 // Tiers are derived from evidence on every read, so a rule change or a revoked credential shows up at once.
 export async function studentTiers(db: Db, userId: string): Promise<Record<string, Tier>> {
-  const rows = await db.select().from(skillEvidence).where(eq(skillEvidence.userId, userId));
+  const rows = await db.select().from(skillEvidence).where(and(eq(skillEvidence.userId, userId), isNull(skillEvidence.revokedAt)));
   const bySkill = Object.groupBy(rows, (r) => r.skillId);
   return Object.fromEntries(Object.entries(bySkill).map(([id, ev]) => [id, tierFor(ev!)]));
+}
+
+// What unlocks projects: verified tiers, plus prerequisites staff accepted through an equivalency
+// review (AC-22). Only for eligibility; profiles and credentials keep showing verified tiers alone.
+export async function eligibilityTiers(db: Db, userId: string): Promise<Record<string, Tier>> {
+  const tiers = await studentTiers(db, userId);
+  for (const q of await db.select().from(equivalencies).where(eq(equivalencies.userId, userId)))
+    if (!tiers[q.skillId] || tiers[q.skillId] === "none") tiers[q.skillId] = "emerging";
+  return tiers;
 }
 
 export const skillNames = async (db: Db) => Object.fromEntries((await db.select().from(skills)).map((s) => [s.id, s.name]));
@@ -68,7 +77,7 @@ export async function listProjects(db: Db, viewer: Actor | null, f: Filters) {
   const taken = await seatsTaken(db, rows.map((r) => r.id));
   const names = await skillNames(db);
   const [profile] = viewer ? await db.select().from(studentProfiles).where(eq(studentProfiles.userId, viewer.id)) : [];
-  const tiers = profile ? await studentTiers(db, viewer!.id) : {};
+  const tiers = profile ? await eligibilityTiers(db, viewer!.id) : {};
   const mine = new Map(viewer
     ? (await db.select({ id: enrollments.projectId, state: enrollments.state }).from(enrollments)
         .where(and(eq(enrollments.studentId, viewer.id), inArray(enrollments.state, ["applied", "offered", "active", "submitted", "revision_requested", "completed"]))))

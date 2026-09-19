@@ -4,6 +4,7 @@ import { NONE } from "@/components/ui";
 import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
+import { updateMentorProfile } from "@/server/profile";
 import { assess, type Decision } from "@/server/review";
 
 export async function assessAction(f: FormData) {
@@ -20,4 +21,11 @@ export async function assessAction(f: FormData) {
   await act(`/mentor/review/${submissionId}`, () => assess(getDb(), u, {
     submissionId, scores, decision, comment: String(f.get("comment") ?? ""), revisionDays: Number(f.get("revisionDays")) || 7,
   }), { to: "/mentor", info: { accept: "Accepted. The student's XP and credentials are issued.", revise: "Revision requested.", not_complete: "Closed as not completed. The student can appeal." }[decision] });
+}
+
+export async function mentorProfileAction(f: FormData) {
+  const u = await requireUser();
+  await act("/mentor", () => updateMentorProfile(getDb(), u, {
+    headline: String(f.get("headline") ?? ""), expertise: String(f.get("expertise") ?? ""), capacity: Number(f.get("capacity")), timezone: String(f.get("timezone") ?? "UTC"),
+  }), { info: "Mentor profile saved." });
 }

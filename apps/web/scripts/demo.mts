@@ -10,6 +10,7 @@ import { setCredentialPublic } from "../src/server/credentials";
 import { reviseBrief } from "../src/server/projects";
 import { briefSchema } from "@iq/core";
 import { addCaseUpdate, openCase, resolveCase } from "../src/server/cases";
+import { grantEquivalency } from "../src/server/staff";
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed a production database.");
 const db = connect(process.env.DATABASE_URL!);
@@ -141,7 +142,7 @@ await db.insert(savedProjects).values([{ userId: ada.id, projectId: P.forecast }
   const e = await join(lucia, P.retail, kofi, "Data cleaning is my favourite part of analysis and I'd like feedback from a professional.");
   await back(e, 5);
   await hand(lucia, e, "Cleaning script and decision log", "I wrote a pandas script that fixes types, removes 312 duplicates and caps outliers, with a log of each decision.");
-  await back(e, 3);
+  await back(e, 10); // past the review target, so it shows up as an escalation
 }
 {
   const e = await join(omar, P.vibration, olive, "I'm switching from software to mechanical diagnostics and want real practice.");
@@ -209,6 +210,14 @@ const enrollmentOf = async (student: string, project: string) =>
   const c = await openCase(db, lucia, { type: "support", summary: "I changed universities. Can I keep my account with my personal email?" });
   await resolveCase(db, sam, { caseId: c.id, resolution: "Yes. Your account and records belong to you, not the university. Change your email from Profile, Details.", action: { kind: "none" } });
   await db.execute(sql`update cases set created_at = now() - interval '12 days', resolved_at = now() - interval '11 days' where id = ${c.id}`);
+}
+
+// ── Equivalency reviews: one accepted, one waiting (AC-22) ──
+await grantEquivalency(db, sam, { userId: jonas.id, skillId: "signal-analysis", evidence: "Two seasons building vibration rigs for the robotics club; club lead confirmed and shared his analysis notebooks." });
+{
+  const c = await openCase(db, dev, { type: "equivalency", skillId: "data-cleaning",
+    summary: "I worked 18 months as a part-time data assistant cleaning sports datasets. My manager can confirm and I can share samples." });
+  await db.execute(sql`update cases set created_at = now() - interval '2 days', due_at = now() + interval '3 days' where id = ${c.id}`);
 }
 
 await expireStaleOffers(db);

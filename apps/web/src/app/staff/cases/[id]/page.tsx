@@ -35,6 +35,7 @@ export default async function CasePage({ params, searchParams }: PageProps<"/sta
       { value: "close", label: "Close participation (work is kept)" },
     ] : []),
     ...(e?.e.state === "closed_incomplete" ? [{ value: "reopen", label: "Reopen for revision (appeal upheld)" }] : []),
+    ...(c.type === "equivalency" ? [{ value: "grant_equivalency", label: "Accept the evidence (unlocks projects, no credential)" }] : []),
   ];
 
   return (

@@ -4,6 +4,7 @@ import { assessments, caseUpdates, cases, enrollments, memberships, milestones, 
 import { getRoles, type Actor } from "./authz";
 import { Forbidden, UserError } from "./errors";
 import { audit, notify, notifyAll, staffIds, track } from "./notify";
+import { grantEquivalency } from "./staff";
 import { enrollmentAccess } from "./workspace";
 
 export const CASE_TYPES = {
@@ -12,17 +13,19 @@ export const CASE_TYPES = {
   conduct: "A problem with the company or mentor",
   support: "Account or other help",
   appeal: "Appeal a decision",
+  equivalency: "Equivalency review",
 } as const;
 export type CaseType = keyof typeof CASE_TYPES;
 const RESPONSE_DAYS = 5; // expected reply, in calendar days
 
-export async function openCase(db: Db, actor: Actor, input: { type: CaseType; enrollmentId?: string; summary: string; requestedDays?: number }) {
+export async function openCase(db: Db, actor: Actor, input: { type: CaseType; enrollmentId?: string; summary: string; requestedDays?: number; skillId?: string }) {
   if (!(input.type in CASE_TYPES)) throw new UserError("Choose what the request is about.");
   const summary = input.summary.trim();
   if (summary.length < 10) throw new UserError("Tell us a little more so staff can help.");
   if (input.enrollmentId) {
     if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
-  } else if (input.type !== "support") throw new UserError("Open this from the project it's about.");
+  } else if (input.type !== "support" && input.type !== "equivalency") throw new UserError("Open this from the project it's about.");
+  if (input.type === "equivalency" && !input.skillId) throw new UserError("Say which skill the evidence is for.");
   if (input.type === "appeal") {
     const [e] = await db.select({ state: enrollments.state }).from(enrollments).where(eq(enrollments.id, input.enrollmentId!));
     if (!["closed_incomplete", "completed"].includes(e.state)) throw new UserError("You can appeal once a decision has been made.");
@@ -30,7 +33,7 @@ export async function openCase(db: Db, actor: Actor, input: { type: CaseType; en
   const days = input.type === "extension" ? Math.max(1, Math.min(30, Math.round(input.requestedDays ?? 7))) : null;
   const [c] = await db.insert(cases).values({
     type: input.type, reporterId: actor.id, enrollmentId: input.enrollmentId ?? null, summary: summary.slice(0, 4000),
-    requestedDays: days, dueAt: new Date(Date.now() + RESPONSE_DAYS * 864e5),
+    requestedDays: days, skillId: input.type === "equivalency" ? input.skillId : null, dueAt: new Date(Date.now() + RESPONSE_DAYS * 864e5),
   }).returning();
   await track(db, "case_opened", c.id, null, { type: c.type }); // no narrative in analytics (§19.1)
   await notifyAll(db, await staffIds(db), { kind: "case", title: `New ${c.type} case #${c.number}`, href: `/staff/cases/${c.id}`, key: `case-open:${c.id}` });
@@ -75,7 +78,8 @@ export type Resolution =
   | { kind: "extend"; days: number }
   | { kind: "replace_mentor"; mentorId: string }
   | { kind: "reopen" }
-  | { kind: "close" };
+  | { kind: "close" }
+  | { kind: "grant_equivalency" };
 
 // OPS-05: every staff intervention records who, what and why.
 export async function resolveCase(db: Db, actor: Actor, input: { caseId: string; resolution: string; action: Resolution }) {
@@ -86,7 +90,10 @@ export async function resolveCase(db: Db, actor: Actor, input: { caseId: string;
   if (c.type === "appeal" && c.enrollmentId && (await involvedIn(db, c.enrollmentId)).has(actor.id))
     throw new Forbidden("You took part in the decision under appeal, so another staff member has to decide it.");
   const a = input.action;
-  if (a.kind !== "none" && !c.enrollmentId) throw new UserError("That action needs a project.");
+  if (a.kind === "grant_equivalency") {
+    if (!c.skillId) throw new UserError("This case has no skill to grant.");
+    await grantEquivalency(db, actor, { userId: c.reporterId, skillId: c.skillId, evidence: input.resolution, caseId: c.id });
+  } else if (a.kind !== "none" && !c.enrollmentId) throw new UserError("That action needs a project.");
 
   await db.transaction(async (tx) => {
     const eid = c.enrollmentId!;

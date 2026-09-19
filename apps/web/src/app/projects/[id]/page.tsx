@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
-import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock, Mail } from "lucide-react";
+import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock } from "lucide-react";
 import { checkEligibility, explainFit } from "@iq/core";
 import { enrollments, savedProjects, studentProfiles, user } from "@iq/db";
 import { toggleSave } from "@/app/explore/actions";
 import { BriefView } from "@/components/brief-view";
 import { availability } from "@/components/project-card";
-import { Alert, Button, ENROLLMENT, EnrollmentBadge, Page, messages } from "@/components/ui";
+import { Alert, Button, ENROLLMENT, EnrollmentBadge, Page, TextArea, messages } from "@/components/ui";
+import { openCaseAction } from "@/app/support/actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/auth";
 import { getRoles } from "@/server/authz";
 import { getDb } from "@/server/db";
-import { coordinatorEmail } from "@/server/demo";
-import { seatsTaken, skillNames, studentTiers } from "@/server/discovery";
+import { eligibilityTiers, seatsTaken, skillNames } from "@/server/discovery";
 import { loadProject } from "@/server/projects";
 
 const TIER_NAME = { emerging: "Emerging", bronze: "Bronze", none: "no evidence yet" } as const;
@@ -39,7 +39,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
   const avail = availability(project.state, open, brief.capacity);
 
   const [profile] = session ? await db.select().from(studentProfiles).where(eq(studentProfiles.userId, session.user.id)) : [];
-  const tiers = profile ? await studentTiers(db, session!.user.id) : {};
+  const tiers = profile ? await eligibilityTiers(db, session!.user.id) : {};
   const elig = checkEligibility(b.prerequisites, tiers);
   const fit = profile && explainFit(
     { interests: profile.interests, weeklyHours: profile.weeklyHours, tiers },
@@ -118,10 +118,16 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
                       <Button asChild size="sm" variant="secondary">
                         <Link href={`/explore?skill=${m.skillId}&beginner=on`}><Compass /> Projects that build it</Link>
                       </Button>
-                      <Button asChild size="sm" variant="ghost">
-                        <a href={`mailto:${coordinatorEmail()}?subject=${encodeURIComponent(`Equivalency review: ${names[m.skillId]}`)}`}><Mail /> Ask for an equivalency review</a>
-                      </Button>
                     </div>
+                    <details className="text-sm">
+                      <summary className="cursor-pointer text-primary">Already have this skill? Ask for an equivalency review</summary>
+                      <form action={openCaseAction} className="mt-2 grid gap-2">
+                        <input type="hidden" name="type" value="equivalency" />
+                        <input type="hidden" name="skillId" value={m.skillId} />
+                        <TextArea label="Your evidence" name="summary" rows={3} required minLength={10} hint="Jobs, courses or work samples staff can check. If accepted, it unlocks projects but isn't a platform credential." />
+                        <Button size="sm" variant="secondary" className="justify-self-start">Send for review</Button>
+                      </form>
+                    </details>
                   </div>
                 ))}
                 {fit && fit.reasons.length > 0 && (

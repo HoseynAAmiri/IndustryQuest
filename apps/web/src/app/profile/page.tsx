@@ -5,7 +5,7 @@ import { asc, desc, eq } from "drizzle-orm";
 import { Award, BadgeCheck, Eye, EyeOff, Medal, Trash2, Trophy } from "lucide-react";
 import { progress, tierFor } from "@iq/core";
 import {
-  briefVersions, credentials, enrollments, organizations, projects, skillClaims, skillEvidence, skills, studentProfiles, xpTransactions,
+  briefVersions, credentials, enrollments, equivalencies, organizations, projects, skillClaims, skillEvidence, skills, studentProfiles, xpTransactions,
 } from "@iq/db";
 import { Stat } from "@/app/dashboard";
 import { Alert, Button, Field, Page, SelectField, TextArea, messages, when } from "@/components/ui";
@@ -42,7 +42,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
   await issuePendingFor(db, me.id);
   const tz = profile.timezone;
 
-  const [ledger, creds, evidence, claims, allSkills] = await Promise.all([
+  const [ledger, creds, evidence, claims, allSkills, eqs] = await Promise.all([
     db.select().from(xpTransactions).where(eq(xpTransactions.userId, me.id)).orderBy(desc(xpTransactions.createdAt)),
     db.select().from(credentials).where(eq(credentials.userId, me.id)).orderBy(desc(credentials.issuedAt)),
     db.select({ ev: skillEvidence, project: briefVersions.title, org: organizations.name })
@@ -54,6 +54,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
       .where(eq(skillEvidence.userId, me.id)).orderBy(desc(skillEvidence.createdAt)),
     db.select().from(skillClaims).where(eq(skillClaims.userId, me.id)),
     db.select().from(skills).orderBy(asc(skills.name)),
+    db.select().from(equivalencies).where(eq(equivalencies.userId, me.id)),
   ]);
   const xp = ledger.reduce((n, t) => n + t.amount, 0);
   const p = progress(xp);
@@ -61,8 +62,8 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
   // One row per skill the student has any connection to: reviewed evidence, a self-report, or both.
   const rows = allSkills.map((s) => {
     const ev = evidence.filter((e) => e.ev.skillId === s.id);
-    return { ...s, ev, tier: tierFor(ev.map((e) => e.ev)), claim: claims.find((c) => c.skillId === s.id) };
-  }).filter((r) => r.ev.length || r.claim)
+    return { ...s, ev, tier: tierFor(ev.filter((e) => !e.ev.revokedAt).map((e) => e.ev)), claim: claims.find((c) => c.skillId === s.id), eq: eqs.find((q) => q.skillId === s.id) };
+  }).filter((r) => r.ev.length || r.claim || r.eq)
     .sort((a, b) => b.ev.length - a.ev.length || a.name.localeCompare(b.name));
   const unlisted = allSkills.filter((s) => !rows.some((r) => r.id === s.id));
   const verified = rows.filter((r) => r.tier !== "none").length;
@@ -143,13 +144,15 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
                 <CardAction className="flex flex-wrap justify-end gap-1.5">
                   {r.tier !== "none" && <Badge className="gap-1"><BadgeCheck className="size-3" />{TIER[r.tier]}</Badge>}
                   {r.claim && <Badge variant="outline">Self-reported</Badge>}
+                  {r.eq && <Badge variant="secondary">Equivalency accepted</Badge>}
                 </CardAction>
               </CardHeader>
               <CardContent className="grid gap-4 text-sm">
+                {r.eq && <p className="text-muted-foreground">Staff accepted outside evidence on {when(r.eq.createdAt, tz)}. It unlocks projects that need Emerging, but it isn't a platform credential.</p>}
                 {r.ev.length > 0 && (
                   <div>
                     <ul className="grid gap-1 text-muted-foreground">
-                      {r.ev.map((e) => <li key={e.ev.id}>{e.project} ({e.org}) · scored {e.ev.score}/4 · {when(e.ev.createdAt, tz)}</li>)}
+                      {r.ev.map((e) => <li key={e.ev.id} className={e.ev.revokedAt ? "line-through" : undefined}>{e.project} ({e.org}) · scored {e.ev.score}/4 · {when(e.ev.createdAt, tz)}{e.ev.revokedAt && " (revoked)"}</li>)}
                     </ul>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {r.tier === "bronze" ? "Highest tier in the pilot." : r.tier === "emerging" ? "Next: Bronze needs a second project reviewed by a different assessor." : "Next: Emerging needs a score of 3 or more."}

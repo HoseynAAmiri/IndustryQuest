@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { skillScores, tierFor } from "@iq/core";
 import {
   assessments, briefVersions, credentials, enrollments, projects, skillEvidence, skills, submissions, xpTransactions, type Db,
@@ -48,7 +48,7 @@ export async function issueRewards(db: Db, enrollmentId: string) {
     const skillIds = [...scores.keys()];
     if (skillIds.length) {
       const evidence = await tx.select().from(skillEvidence)
-        .where(and(eq(skillEvidence.userId, e.studentId), inArray(skillEvidence.skillId, skillIds)));
+        .where(and(eq(skillEvidence.userId, e.studentId), inArray(skillEvidence.skillId, skillIds), isNull(skillEvidence.revokedAt)));
       const names = Object.fromEntries((await tx.select().from(skills).where(inArray(skills.id, skillIds))).map((s) => [s.id, s.name]));
       for (const skillId of skillIds) {
         const tier = tierFor(evidence.filter((x) => x.skillId === skillId));

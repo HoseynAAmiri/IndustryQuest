@@ -12,6 +12,7 @@ export async function openCaseAction(f: FormData) {
   const back = enrollmentId ? `/workspace/${enrollmentId}` : "/support";
   await act(back, () => openCase(getDb(), u, {
     type: s(f, "type") as CaseType, enrollmentId, summary: s(f, "summary"), requestedDays: Number(s(f, "requestedDays")) || undefined,
+    skillId: s(f, "skillId") || undefined,
   }), { to: "/support", info: "Request sent. Staff will reply within five days." });
 }
 
@@ -31,7 +32,7 @@ export async function resolveCaseAction(f: FormData) {
   const kind = s(f, "action");
   const action: Resolution = kind === "extend" ? { kind, days: Number(s(f, "days")) || 7 }
     : kind === "replace_mentor" ? { kind, mentorId: s(f, "mentorId") }
-    : kind === "reopen" || kind === "close" ? { kind } : { kind: "none" };
+    : kind === "reopen" || kind === "close" || kind === "grant_equivalency" ? { kind } : { kind: "none" };
   await act(`/staff/cases/${s(f, "caseId")}`, () => resolveCase(getDb(), u, { caseId: s(f, "caseId"), resolution: s(f, "resolution"), action }),
     { to: "/staff/cases", info: "Case resolved and the reporter notified." });
 }

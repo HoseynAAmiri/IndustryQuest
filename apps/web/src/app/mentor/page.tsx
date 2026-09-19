@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { ArrowRight, ClipboardCheck, Clock, Inbox, Users } from "lucide-react";
-import { assessments, briefVersions, enrollments, organizations, projects, submissions, user } from "@iq/db";
+import { assessments, briefVersions, enrollments, mentorProfiles, organizations, projects, submissions, user } from "@iq/db";
+import { mentorProfileAction } from "./actions";
+import { Field, SelectField } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
 import { confirmMentoringAction } from "@/app/company/actions";
 import { Alert, Button, EnrollmentBadge, Page, messages, when } from "@/components/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +43,7 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
   const asks = await db.select({ id: projects.id, title: briefVersions.title, org: organizations.name, content: briefVersions.content }).from(projects)
     .innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId)).innerJoin(organizations, eq(organizations.id, projects.orgId))
     .where(and(eq(briefVersions.mentorId, me.id), isNull(projects.mentorConfirmedAt)));
+  const [mp] = await db.select().from(mentorProfiles).where(eq(mentorProfiles.userId, me.id));
   const mentees = mine.filter((m) => m.e.state !== "submitted" && m.e.state !== "completed");
   const overdue = queue.filter((q) => businessDaysSince(q.s.createdAt) > 5).length;
 
@@ -105,7 +109,25 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
             </ul>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card>
+          <form action={mentorProfileAction}>
+            <CardHeader>
+              <CardTitle className="flex flex-wrap items-center gap-2">Your mentor profile
+                {mp?.verifiedAt ? <Badge>Verified by staff</Badge> : <Badge variant="outline">Not verified yet</Badge>}</CardTitle>
+              <CardDescription>{mp?.verificationNote ? `Checked: ${mp.verificationNote}` : "Students see your headline and expertise. Staff verify your affiliation."}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 pt-4">
+              <Field label="Headline" name="headline" defaultValue={mp?.headline} placeholder="Reliability engineer, 8 years in pumps" />
+              <Field label="Expertise" name="expertise" defaultValue={mp?.expertise.join(", ")} hint="Comma separated." />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Mentees at once" name="capacity" type="number" min={1} max={10} defaultValue={mp?.capacity ?? 3} />
+                <SelectField label="Timezone" name="timezone" defaultValue={mp?.timezone ?? "UTC"} options={Intl.supportedValuesOf("timeZone").map((z) => ({ value: z, label: z.replaceAll("_", " ") }))} />
+              </div>
+              <Button size="sm" variant="secondary" className="justify-self-start">Save profile</Button>
+            </CardContent>
+          </form>
+        </Card>
+        <Card>
           <CardHeader><CardTitle>Recently reviewed</CardTitle></CardHeader>
           <CardContent>
             <ul className="divide-y rounded-lg border">

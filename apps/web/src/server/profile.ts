@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { skillClaims, skills, studentProfiles, user, type Db } from "@iq/db";
+import { memberships, mentorProfiles, skillClaims, skills, studentProfiles, user, type Db } from "@iq/db";
 import type { Actor } from "./authz";
 import { UserError } from "./errors";
 
@@ -39,4 +39,17 @@ export async function setSkillClaim(db: Db, actor: Actor, input: { skillId: stri
 
 export async function removeSkillClaim(db: Db, actor: Actor, skillId: string) {
   await db.delete(skillClaims).where(and(eq(skillClaims.userId, actor.id), eq(skillClaims.skillId, skillId)));
+}
+
+// MEN-01/03: professional context and the number of mentees the mentor can take on.
+export async function updateMentorProfile(db: Db, actor: Actor, input: { headline: string; expertise: string; capacity: number; timezone: string }) {
+  const [m] = await db.select().from(memberships).where(and(eq(memberships.userId, actor.id), eq(memberships.role, "mentor")));
+  if (!m) throw new UserError("Only mentors have a mentor profile.");
+  const values = {
+    headline: input.headline.trim().slice(0, 120),
+    expertise: input.expertise.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 10),
+    capacity: Math.max(1, Math.min(10, Math.round(input.capacity) || 1)),
+    timezone: Intl.supportedValuesOf("timeZone").includes(input.timezone) ? input.timezone : "UTC",
+  };
+  await db.insert(mentorProfiles).values({ userId: actor.id, ...values }).onConflictDoUpdate({ target: mentorProfiles.userId, set: values });
 }
