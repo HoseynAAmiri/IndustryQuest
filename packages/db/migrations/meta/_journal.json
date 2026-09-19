@@ -5,71 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1789771884190,
-      "tag": "0000_old_abomination",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1789773334398,
-      "tag": "0001_lush_pestilence",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1789775008161,
-      "tag": "0002_open_guardian",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1789776402387,
-      "tag": "0003_common_ken_ellis",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1789776660671,
-      "tag": "0004_reflective_puff_adder",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1789776942268,
-      "tag": "0005_fantastic_colleen_wing",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1789784205929,
-      "tag": "0006_needy_pet_avengers",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1789784615659,
-      "tag": "0007_jittery_vapor",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1789785120632,
-      "tag": "0008_melted_rockslide",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1789822352339,
-      "tag": "0009_small_red_wolf",
+      "when": 1789824148993,
+      "tag": "0000_neat_spyke",
       "breakpoints": true
     }
   ]
