@@ -39,7 +39,7 @@ export async function assess(db: Db, actor: Actor, input: {
     });
     await tx.update(enrollments).set({
       state: nextEnrollment(row.e.state, action[input.decision]), updatedAt: now,
-      ...(input.decision === "accept" && { completedAt: now, rewardsStatus: "pending" as const }),
+      ...(input.decision === "accept" && { completedAt: now, accessArchivedAt: now, rewardsStatus: "pending" as const }),
     }).where(eq(enrollments.id, row.e.id));
   });
   await track(db, "review_decision", row.e.id, actor.id, { decision: input.decision, version: row.s.version });

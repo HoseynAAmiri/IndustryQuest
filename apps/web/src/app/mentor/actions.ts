@@ -6,6 +6,7 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { updateMentorProfile } from "@/server/profile";
 import { assess, type Decision } from "@/server/review";
+import { sendWelcome } from "@/server/workspace";
 
 export async function assessAction(f: FormData) {
   const u = await requireUser();
@@ -28,4 +29,10 @@ export async function mentorProfileAction(f: FormData) {
   await act("/mentor", () => updateMentorProfile(getDb(), u, {
     headline: String(f.get("headline") ?? ""), expertise: String(f.get("expertise") ?? ""), capacity: Number(f.get("capacity")), timezone: String(f.get("timezone") ?? "UTC"),
   }), { info: "Mentor profile saved." });
+}
+
+export async function welcomeAction(f: FormData) {
+  const u = await requireUser();
+  const enrollmentId = String(f.get("enrollmentId"));
+  await act("/mentor", () => sendWelcome(getDb(), u, enrollmentId), { info: "Welcome message sent." });
 }

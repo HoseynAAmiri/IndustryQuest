@@ -31,11 +31,13 @@ export default async function CasePage({ params, searchParams }: PageProps<"/sta
     { value: "none", label: "No change to the project" },
     ...(e && ["active", "revision_requested"].includes(e.e.state) ? [
       { value: "extend", label: "Extend open deadlines" },
+      { value: "pause", label: "Approve a pause and move deadlines" },
       { value: "replace_mentor", label: "Replace the mentor" },
       { value: "close", label: "Close participation (work is kept)" },
     ] : []),
     ...(e?.e.state === "closed_incomplete" ? [{ value: "reopen", label: "Reopen for revision (appeal upheld)" }] : []),
     ...(c.type === "equivalency" ? [{ value: "grant_equivalency", label: "Accept the evidence (unlocks projects, no credential)" }] : []),
+    ...(c.type === "deletion" ? [{ value: "delete_account", label: "Anonymize account and revoke login (records stay)" }] : []),
   ];
 
   return (

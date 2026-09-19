@@ -14,14 +14,19 @@ type Url = string | (() => string);
 const url = (u: Url) => (typeof u === "function" ? u() : u);
 
 // URLs may be functions so they can use ids created inside fn.
-export async function act(back: Url, fn: () => Promise<unknown>, done: { to?: Url; info?: string } = {}) {
+export async function act<T>(back: Url, fn: () => Promise<T>, done: {
+  to?: Url; info?: string; params?: (result: T) => Record<string, string>;
+} = {}) {
+  let result: T;
   try {
-    await fn();
+    result = await fn();
   } catch (e) {
     if (e instanceof UserError) redirect(withParam(url(back), "error", e.message));
     if (e instanceof TransitionError) redirect(withParam(url(back), "error", "That action isn't available any more. The page may be out of date."));
     throw e;
   }
-  const to = url(done.to ?? back);
-  redirect(done.info ? withParam(to, "info", done.info) : to);
+  let to = url(done.to ?? back);
+  if (done.info) to = withParam(to, "info", done.info);
+  for (const [key, value] of Object.entries(done.params?.(result) ?? {})) to = withParam(to, key, value);
+  redirect(to);
 }

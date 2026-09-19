@@ -1,12 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
 import { expect, test } from "vitest";
-import { credentials, enrollments, notifications, skillEvidence, xpTransactions } from "@iq/db";
+import { auditEvents, credentials, enrollments, notifications, organizations, skillEvidence, xpTransactions } from "@iq/db";
 import { brief, confirmAndSubmit, db, makeOrg, makeSkill, makeUser } from "../../test/db";
 import { eligibilityTiers, listProjects, studentTiers } from "./discovery";
 import { apply, makeOffer, respondToOffer } from "./enrollments";
 import { reviewProject, saveDraft } from "./projects";
 import { assess } from "./review";
-import { grantEquivalency, grantException, revokeCredential, runEscalations } from "./staff";
+import { grantEquivalency, grantException, revokeCredential, runEscalations, undoOrgVerification, verifyOrgWithNote } from "./staff";
 import { addLink, submit } from "./workspace";
 
 const rubric = [{ id: "c1", name: "Sig", description: "", critical: true, threshold: 3, skillId: "sig" }];
@@ -53,6 +53,21 @@ test("AC-15: revoking a completion reverses XP, retires evidence and drops tiers
   expect(statuses).toEqual(["revoked", "revoked", "revoked"]);
   expect((await db.select().from(skillEvidence))[0].revokedAt).not.toBeNull(); // kept, not deleted
   expect((await db.select().from(notifications).where(eq(notifications.userId, ada.id))).map((n) => n.title)).toContainEqual(expect.stringContaining("revoked"));
+});
+
+test("organization verification is atomic, attributable and only its exact action can be undone", async () => {
+  const staff = await makeUser("staff", { isStaff: true });
+  const owner = await makeUser("owner");
+  const org = await makeOrg({ owner: owner.id, verified: false });
+  const result = await verifyOrgWithNote(db, staff, { orgId: org.id, note: "Register and work email checked." });
+  let [saved] = await db.select().from(organizations).where(eq(organizations.id, org.id));
+  expect([saved.verifiedBy, saved.verificationNote]).toEqual([staff.id, "Register and work email checked."]);
+  expect((await db.select().from(auditEvents).where(eq(auditEvents.id, result.eventId)))[0].targetId).toBe(org.id);
+  await expect(verifyOrgWithNote(db, staff, { orgId: org.id, note: "Checked again." })).rejects.toThrow("already verified");
+  await undoOrgVerification(db, staff, result);
+  [saved] = await db.select().from(organizations).where(eq(organizations.id, org.id));
+  expect([saved.verifiedAt, saved.verifiedBy, saved.verificationNote]).toEqual([null, null, null]);
+  await expect(undoOrgVerification(db, staff, result)).rejects.toThrow("not undone");
 });
 
 test("AC-22: an equivalency unlocks a gated project without issuing any credential", async () => {

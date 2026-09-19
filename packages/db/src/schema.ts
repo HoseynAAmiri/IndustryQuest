@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+  boolean, date, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
 import { ENROLLMENT_STATES, LISTING_STATES, type Brief, type Score } from "@iq/core";
 
@@ -16,6 +16,8 @@ export const user = pgTable("user", {
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   isStaff: boolean("is_staff").notNull().default(false),
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: created(),
   updatedAt: updated(),
 });
@@ -56,6 +58,16 @@ export const verification = pgTable("verification", {
   updatedAt: updated(),
 });
 
+export const twoFactor = pgTable("two_factor", {
+  id: text("id").primaryKey(),
+  secret: text("secret").notNull(),
+  backupCodes: text("backup_codes").notNull(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  verified: boolean("verified").notNull().default(true),
+  failedVerificationCount: integer("failed_verification_count").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+});
+
 // ── Organizations and roles ──
 // A student is any user with a student profile. Company roles come from memberships. Staff is a flag.
 
@@ -66,6 +78,9 @@ export const organizations = pgTable("organizations", {
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   verifiedBy: text("verified_by").references(() => user.id),
   verificationNote: text("verification_note"), // ACC-06: what staff actually checked
+  suspendedAt: timestamp("suspended_at", { withTimezone: true }),
+  suspendedBy: text("suspended_by").references(() => user.id),
+  suspensionReason: text("suspension_reason"),
   isDemo: boolean("is_demo").notNull().default(false), // kept out of reports unless asked for (AC-21)
   createdAt: created(),
 });
@@ -117,6 +132,20 @@ export const studentProfiles = pgTable("student_profiles", {
 export const skills = pgTable("skills", {
   id: text("id").primaryKey(), // slug, e.g. "signal-analysis"
   name: text("name").notNull(),
+  aliases: text("aliases").array().notNull().default(sql`'{}'::text[]`),
+  active: boolean("active").notNull().default(true),
+  updatedAt: updated(),
+});
+
+export const rubricTemplates = pgTable("rubric_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  criteria: jsonb("criteria").$type<Brief["rubric"]>().notNull(),
+  version: integer("version").notNull().default(1),
+  active: boolean("active").notNull().default(true),
+  updatedBy: text("updated_by").notNull().references(() => user.id),
+  createdAt: created(),
+  updatedAt: updated(),
 });
 
 // PRO-02: what the student says they can do. Never platform-verified and never used for eligibility;
@@ -218,6 +247,9 @@ export const enrollments = pgTable(
     offerExpiresAt: timestamp("offer_expires_at", { withTimezone: true }),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    pausedUntil: timestamp("paused_until", { withTimezone: true }),
+    pauseReason: text("pause_reason"),
+    accessArchivedAt: timestamp("access_archived_at", { withTimezone: true }),
     rewardsStatus: rewardsStatus("rewards_status").notNull().default("none"),
     // WRK-05: a submission draft kept between visits.
     draftContribution: text("draft_contribution"),
@@ -391,10 +423,28 @@ export const auditEvents = pgTable("audit_events", {
   createdAt: created(),
 });
 
+// OPS-04: a contact restriction hides messages both ways. Staff keep access so they can arrange reassignment.
+export const blockedUsers = pgTable("blocked_users", {
+  blockerId: text("blocker_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  blockedId: text("blocked_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  enrollmentId: uuid("enrollment_id").notNull().references(() => enrollments.id),
+  createdAt: created(),
+}, (t) => [primaryKey({ columns: [t.blockerId, t.blockedId, t.enrollmentId] })]);
+
+export const holidays = pgTable("holidays", {
+  day: date("day").primaryKey(),
+  name: text("name").notNull(),
+  createdBy: text("created_by").notNull().references(() => user.id),
+  createdAt: created(),
+});
+
 // ── Cases: blockers, extensions, reports, support and appeals (WRK-06, OPS-02/03/09/13, ASM-08) ──
 // Private to the reporter and staff. Opening one never changes the student's record by itself.
 
-export const caseType = pgEnum("case_type", ["blocker", "extension", "conduct", "support", "appeal", "equivalency"]);
+export const caseType = pgEnum("case_type", [
+  "blocker", "extension", "conduct", "support", "appeal", "equivalency",
+  "mentor_feedback", "project_feedback", "reviewer_conflict", "deletion",
+]);
 export const caseStatus = pgEnum("case_status", ["open", "in_progress", "resolved"]);
 
 export const cases = pgTable("cases", {

@@ -1,13 +1,14 @@
-import { and, asc, desc, eq, isNull, max, ne } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, max, ne, or } from "drizzle-orm";
 import { nextEnrollment } from "@iq/core";
 import {
-  assessments, briefVersions, enrollments, files, messages, milestones, organizations, projects, submissions, user, type Db,
+  assessments, blockedUsers, briefVersions, enrollments, files, messages, milestones, organizations, projects, submissions, user, type Db,
 } from "@iq/db";
 import { getRoles, type Actor } from "./authz";
 import { Forbidden, UserError } from "./errors";
 import { audit, notify, track } from "./notify";
 
 export type Access = "student" | "mentor" | "owner" | "staff";
+const WORKING = ["active", "revision_requested"];
 
 // AC-08: the one gate for every enrollment read and write, including file downloads.
 // A mentor only gets in while assigned; a former mentor or another org's owner does not.
@@ -29,7 +30,7 @@ export async function enrollmentAccess(db: Db, actor: Actor, enrollmentId: strin
 
 export async function loadWorkspace(db: Db, actor: Actor, enrollmentId: string) {
   const access = await enrollmentAccess(db, actor, enrollmentId);
-  const [row] = await db.select({ e: enrollments, v: briefVersions, org: organizations, student: user })
+  const [row] = await db.select({ e: enrollments, v: briefVersions, org: organizations, student: user, ownerId: projects.ownerId })
     .from(enrollments)
     .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
     .innerJoin(projects, eq(projects.id, enrollments.projectId))
@@ -37,7 +38,8 @@ export async function loadWorkspace(db: Db, actor: Actor, enrollmentId: string) 
     .innerJoin(user, eq(user.id, enrollments.studentId))
     .where(eq(enrollments.id, enrollmentId));
   const [mentor] = row.e.mentorId ? await db.select().from(user).where(eq(user.id, row.e.mentorId)) : [];
-  const [ms, msgs, fs, subs] = await Promise.all([
+  const [owner] = await db.select().from(user).where(eq(user.id, row.ownerId));
+  const [ms, msgs, fs, subs, restrictions] = await Promise.all([
     db.select().from(milestones).where(eq(milestones.enrollmentId, enrollmentId)).orderBy(asc(milestones.dueAt)),
     db.select({ m: messages, author: user.name }).from(messages).innerJoin(user, eq(user.id, messages.authorId))
       .where(eq(messages.enrollmentId, enrollmentId)).orderBy(asc(messages.createdAt)),
@@ -47,14 +49,27 @@ export async function loadWorkspace(db: Db, actor: Actor, enrollmentId: string) 
       .leftJoin(assessments, eq(assessments.submissionId, submissions.id))
       .leftJoin(user, eq(user.id, assessments.assessorId))
       .where(eq(submissions.enrollmentId, enrollmentId)).orderBy(desc(submissions.version)),
+    db.select().from(blockedUsers).where(and(eq(blockedUsers.enrollmentId, enrollmentId),
+      or(eq(blockedUsers.blockerId, actor.id), eq(blockedUsers.blockedId, actor.id)))),
   ]);
-  return { access, ...row, mentor, milestones: ms, messages: msgs, files: fs, submissions: subs };
+  const hidden = new Set(restrictions.flatMap((r) => [r.blockerId, r.blockedId]).filter((id) => id !== actor.id));
+  return { access, ...row, mentor, owner, milestones: ms, messages: msgs.filter(({ m }) => !hidden.has(m.authorId)), files: fs, submissions: subs,
+    contactRestricted: restrictions.length > 0 };
 }
 
-const WORKING = ["active", "revision_requested"];
+export async function assertWorkspaceOpen(db: Db, actor: Actor, enrollmentId: string, allowSubmitted = false) {
+  const access = await enrollmentAccess(db, actor, enrollmentId);
+  const [e] = await db.select({ state: enrollments.state }).from(enrollments).where(eq(enrollments.id, enrollmentId));
+  if (!e || ![...WORKING, ...(allowSubmitted ? ["submitted"] : [])].includes(e.state))
+    throw new UserError("This workspace is archived and read-only.");
+  return access;
+}
 
 export async function postMessage(db: Db, actor: Actor, input: { enrollmentId: string; body: string; isQuestion?: boolean; fileId?: string }) {
-  await enrollmentAccess(db, actor, input.enrollmentId);
+  await assertWorkspaceOpen(db, actor, input.enrollmentId, true);
+  const restricted = await db.select({ id: blockedUsers.blockerId }).from(blockedUsers).where(and(eq(blockedUsers.enrollmentId, input.enrollmentId),
+    or(eq(blockedUsers.blockerId, actor.id), eq(blockedUsers.blockedId, actor.id)))).limit(1);
+  if (restricted.length) throw new UserError("Direct contact is restricted on this project. Program staff can help through Support.");
   const body = input.body.trim();
   if (!body) throw new UserError("Write a message first.");
   if (input.fileId) {
@@ -74,13 +89,13 @@ export async function postMessage(db: Db, actor: Actor, input: { enrollmentId: s
 
 export async function toggleMilestone(db: Db, actor: Actor, milestoneId: string) {
   const [m] = await db.select().from(milestones).where(eq(milestones.id, milestoneId));
-  if (!m || (await enrollmentAccess(db, actor, m.enrollmentId)) !== "student") throw new Forbidden();
+  if (!m || (await assertWorkspaceOpen(db, actor, m.enrollmentId)) !== "student") throw new Forbidden();
   await db.update(milestones).set({ doneAt: m.doneAt ? null : new Date() }).where(eq(milestones.id, m.id));
 }
 
 // INT-01: approved external links (repository, notebook, drive) instead of importing account data.
 export async function addLink(db: Db, actor: Actor, input: { enrollmentId: string; name: string; url: string; description?: string }) {
-  if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
+  if ((await assertWorkspaceOpen(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
   let url: URL;
   try { url = new URL(input.url.trim()); } catch { throw new UserError("That link isn't a valid URL."); }
   if (url.protocol !== "https:") throw new UserError("Links must start with https://");
@@ -88,7 +103,7 @@ export async function addLink(db: Db, actor: Actor, input: { enrollmentId: strin
 }
 
 export async function recordUpload(db: Db, actor: Actor, input: { enrollmentId: string; name: string; r2Key: string; size: number; contentType: string; sha256: string; description?: string }) {
-  if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
+  if ((await assertWorkspaceOpen(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
   const [f] = await db.insert(files).values({ ...input, uploaderId: actor.id }).returning();
   return f;
 }
@@ -131,7 +146,21 @@ export async function fileForDownload(db: Db, actor: Actor, fileId: string) {
 
 // WRK-05: keep a half-written submission between visits.
 export async function saveSubmissionDraft(db: Db, actor: Actor, input: { enrollmentId: string; contribution: string; reflection: string }) {
-  if ((await enrollmentAccess(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
+  if ((await assertWorkspaceOpen(db, actor, input.enrollmentId)) !== "student") throw new Forbidden();
   await db.update(enrollments).set({ draftContribution: input.contribution.slice(0, 4000), draftReflection: input.reflection.slice(0, 4000) })
     .where(eq(enrollments.id, input.enrollmentId));
+}
+
+export async function sendWelcome(db: Db, actor: Actor, enrollmentId: string) {
+  const w = await loadWorkspace(db, actor, enrollmentId);
+  if (w.access !== "mentor" || w.e.state !== "active") throw new Forbidden();
+  if (w.messages.some(({ m }) => m.authorId === actor.id)) throw new UserError("You have already started this project conversation.");
+  const checkpoint = w.milestones[0];
+  const body = [
+    `Welcome, ${w.student.name.split(" ")[0]}. Use this discussion for project questions and @mention me when you need a reply.`,
+    "I reply within two business days and review submitted work within five business days.",
+    checkpoint ? `Our first checkpoint is ${checkpoint.title} on ${checkpoint.dueAt.toISOString().slice(0, 10)}.` : "We will agree our first checkpoint here.",
+    `If I am unavailable, contact ${w.v.content.backupContact}. For a private concern, use Stuck or worried in this workspace.`,
+  ].join("\n\n");
+  return postMessage(db, actor, { enrollmentId, body });
 }

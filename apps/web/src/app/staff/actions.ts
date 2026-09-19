@@ -3,7 +3,7 @@ import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { reviewProject } from "@/server/projects";
-import { correctCredentialSummary, grantEquivalency, grantException, revokeCredential, verifyMentor, verifyOrgWithNote } from "@/server/staff";
+import { correctCredentialSummary, grantEquivalency, grantException, revokeCredential, saveRubricTemplate, saveSkill, setHoliday, setOrgSuspension, undoOrgVerification, verifyMentor, verifyOrgWithNote } from "@/server/staff";
 
 export async function review(form: FormData) {
   const user = await requireUser();
@@ -18,7 +18,40 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "");
 
 export async function verify(form: FormData) {
   const user = await requireUser();
-  await act("/staff", () => verifyOrgWithNote(getDb(), user, { orgId: s(form, "orgId"), note: s(form, "note") }), { info: "Organization verified." });
+  await act("/staff", () => verifyOrgWithNote(getDb(), user, { orgId: s(form, "orgId"), note: s(form, "note") }), {
+    info: "Organization verified.", params: (result) => ({ undoOrg: result.orgId, undoEvent: result.eventId }),
+  });
+}
+
+export async function undoVerification(form: FormData) {
+  const user = await requireUser();
+  await act("/staff", () => undoOrgVerification(getDb(), user, { orgId: s(form, "orgId"), eventId: s(form, "eventId") }),
+    { info: "Organization verification undone." });
+}
+
+export async function suspensionAction(form: FormData) {
+  const user = await requireUser();
+  const suspend = s(form, "action") === "suspend";
+  await act("/staff", () => setOrgSuspension(getDb(), user, { orgId: s(form, "orgId"), suspend, reason: s(form, "reason") }),
+    { info: suspend ? "Organization suspended. Live listings were paused." : "Organization participation restored." });
+}
+
+export async function skillCatalogAction(form: FormData) {
+  const user = await requireUser();
+  await act("/staff/catalog", () => saveSkill(getDb(), user, { id: s(form, "id"), name: s(form, "name"), aliases: s(form, "aliases"), active: form.get("active") === "on" }),
+    { info: "Skill catalog version saved." });
+}
+
+export async function rubricTemplateAction(form: FormData) {
+  const user = await requireUser();
+  await act("/staff/catalog", () => saveRubricTemplate(getDb(), user, { name: s(form, "name"), criterion: s(form, "criterion"), description: s(form, "description"), threshold: Number(s(form, "threshold")), skillId: s(form, "skillId") === "none" ? undefined : s(form, "skillId") || undefined }),
+    { info: "New rubric template version saved." });
+}
+
+export async function holidayAction(form: FormData) {
+  const user = await requireUser();
+  await act("/staff/catalog", () => setHoliday(getDb(), user, { day: s(form, "day"), name: s(form, "intent") === "remove" ? undefined : s(form, "name") }),
+    { info: s(form, "intent") === "remove" ? "Holiday removed." : "Holiday saved. Overdue rules now skip it." });
 }
 
 export async function verifyMentorAction(form: FormData) {

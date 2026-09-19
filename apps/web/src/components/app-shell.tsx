@@ -43,6 +43,7 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
       { href: "/staff/cases", label: "Cases", icon: "cases", badge: await openCaseCount(db) },
       { href: "/staff/students", label: "Students", icon: "students" },
       { href: "/staff/reports", label: "Pilot report", icon: "reports" },
+      { href: "/staff/catalog", label: "Skills and calendar", icon: "catalog" },
       { href: "/staff/audit", label: "Audit log", icon: "audit" },
     ] });
   }

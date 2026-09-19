@@ -37,7 +37,8 @@ export async function track(db: Db | Tx, name: string, subjectId: string | null,
 
 // OPS-07: consequential and sensitive actions leave an attributable record.
 export async function audit(db: Db | Tx, actorId: string | null, action: string, targetType: string, targetId: string, reason?: string, meta: Record<string, unknown> = {}) {
-  await db.insert(auditEvents).values({ actorId, action, targetType, targetId, reason, meta });
+  const [event] = await db.insert(auditEvents).values({ actorId, action, targetType, targetId, reason, meta }).returning();
+  return event;
 }
 
 export async function ownersOf(db: Db, orgId: string) {

@@ -2,7 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getSession } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { UserError } from "@/server/errors";
-import { enrollmentAccess, recordUpload } from "@/server/workspace";
+import { assertWorkspaceOpen, recordUpload } from "@/server/workspace";
 
 const MAX = 10 * 1024 * 1024;
 const TYPES = /\.(pdf|png|jpe?g|csv|txt|md|ipynb|py|json|zip|xlsx|docx|pptx)$/i;
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   try {
     const db = getDb();
     // Access check runs before anything is stored.
-    if ((await enrollmentAccess(db, session.user, enrollmentId)) !== "student") return back("Only the student can add files here.");
+    if ((await assertWorkspaceOpen(db, session.user, enrollmentId)) !== "student") return back("Only the student can add files here.");
     await getCloudflareContext().env.FILES.put(r2Key, buf, { httpMetadata: { contentType: file.type || "application/octet-stream" } });
     await recordUpload(db, session.user, { enrollmentId, name: file.name.slice(0, 200), r2Key, size: file.size, contentType: file.type, sha256, description: String(form.get("description") ?? "").slice(0, 300) });
   } catch (e) {

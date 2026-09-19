@@ -9,6 +9,7 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { ConfirmSubmit } from "@/components/confirm";
 import { assessAction } from "../../actions";
+import { openCaseAction } from "@/app/support/actions";
 
 const SCALE = [
   { value: "4", label: "4 · Strong evidence" }, { value: "3", label: "3 · Demonstrated" },
@@ -92,6 +93,16 @@ export default async function Review({ params, searchParams }: PageProps<"/mento
             </CardContent>
           </Card>
           {!open && <Alert tone="info">This version was already reviewed.</Alert>}
+          {open && <Card>
+            <form action={openCaseAction}>
+              <CardHeader><CardTitle className="text-base">Conflict of interest?</CardTitle><CardDescription>Do not score the work. Tell program staff privately so they can assign another reviewer.</CardDescription></CardHeader>
+              <CardContent className="grid gap-3 pt-4">
+                <input type="hidden" name="type" value="reviewer_conflict" /><input type="hidden" name="enrollmentId" value={row.e.id} />
+                <TextArea label="Describe the conflict" name="summary" rows={3} required minLength={10} />
+                <Button size="sm" variant="secondary" className="justify-self-start">Request another reviewer</Button>
+              </CardContent>
+            </form>
+          </Card>}
         </aside>
       </div>
     </Page>

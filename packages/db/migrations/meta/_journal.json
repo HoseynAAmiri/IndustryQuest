@@ -64,6 +64,13 @@
       "when": 1789785120632,
       "tag": "0008_melted_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789822352339,
+      "tag": "0009_small_red_wolf",
+      "breakpoints": true
     }
   ]
 }

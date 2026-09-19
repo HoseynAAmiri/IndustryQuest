@@ -49,9 +49,10 @@ export const SELECTION = {
 } as const;
 export type Brief = z.infer<typeof briefSchema>;
 
-export function canPublish(b: Brief, org: { verified: boolean; mentorConfirmed?: boolean }, today = new Date().toISOString().slice(0, 10)) {
+export function canPublish(b: Brief, org: { verified: boolean; mentorConfirmed?: boolean; suspended?: boolean }, today = new Date().toISOString().slice(0, 10)) {
   const e: string[] = [];
   if (!org.verified) e.push("Your organization has not been verified by staff yet.");
+  if (org.suspended) e.push("Program staff have paused new activity for this organization.");
   if (b.title.trim().length < 3) e.push("Add a title.");
   if (b.summary.trim().length < 20) e.push("Write a public summary of at least 20 characters.");
   if (!b.problem.trim()) e.push("Describe the real problem the project addresses.");

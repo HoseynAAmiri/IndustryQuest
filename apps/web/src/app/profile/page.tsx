@@ -19,10 +19,11 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { CLAIM_LEVELS } from "@/server/profile";
 import { issuePendingFor } from "@/server/rewards";
-import { ConfirmSubmit } from "@/components/confirm";
+import { ConfirmForm, ConfirmSubmit } from "@/components/confirm";
 import { changeEmailAction, saveProfileAction, shareAction, skillAction, summaryAction, visibilityAction } from "./actions";
 import { PARTICIPATION } from "@/server/profile";
 import { Input } from "@/components/ui/input";
+import { openCaseAction } from "@/app/support/actions";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -295,6 +296,15 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
                   <Button size="sm" variant="secondary" className="justify-self-start">Upload</Button>
                 </form>
                 {me.image && <form action="/api/avatar" method="post" encType="multipart/form-data"><input type="hidden" name="remove" value="1" /><Button size="sm" variant="ghost">Remove photo</Button></form>}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Delete account</CardTitle><CardDescription>Staff review the request so accepted work and credentials are not lost by accident.</CardDescription></CardHeader>
+              <CardContent>
+                <ConfirmForm action={openCaseAction} fields={{ type: "deletion", summary: "Please delete my account and anonymize the records that must be retained." }} variant="destructive"
+                  ask={{ title: "Request account deletion?", description: "Staff will revoke sign-in and remove personal profile details. Accepted project, assessment and audit records stay under an anonymous name.", confirm: "Request deletion", destructive: true }}>
+                  Request account deletion
+                </ConfirmForm>
               </CardContent>
             </Card>
             <Card>

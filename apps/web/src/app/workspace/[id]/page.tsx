@@ -20,8 +20,8 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { issueRewards } from "@/server/rewards";
 import { loadWorkspace } from "@/server/workspace";
-import { openCaseAction } from "@/app/support/actions";
-import { draftAction, linkAction, messageAction, milestoneAction, scopeAction, submitAction } from "./actions";
+import { blockContactAction, openCaseAction } from "@/app/support/actions";
+import { draftAction, feedbackAction, linkAction, messageAction, milestoneAction, scopeAction, submitAction } from "./actions";
 import { UnsavedGuard } from "@/components/unsaved-guard";
 
 export const metadata: Metadata = { title: "Workspace" };
@@ -57,6 +57,8 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
   const changes = proposed ? briefDiff(briefSchema.parse(w.v.content), briefSchema.parse(proposed.content)) : [];
   const decided = w.e.state === "closed_incomplete" || w.e.state === "completed";
   const fileName = Object.fromEntries(w.files.map(({ f }) => [f.id, f.name]));
+  const contacts = [w.mentor, w.owner].filter((person): person is NonNullable<typeof person> => !!person)
+    .filter((person, index, all) => all.findIndex((x) => x.id === person.id) === index);
 
   const timeline = [
     { at: w.e.createdAt, text: "Applied" },
@@ -72,7 +74,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
       actions={<EnrollmentBadge state={w.e.state} />}>
       <div className="mb-6 grid gap-3">
         <Alert>{error}</Alert>
-        
+        {w.e.pausedUntil && w.e.pausedUntil > new Date() && <Alert tone="info">Project paused until {when(w.e.pausedUntil, tz, true)}. {w.e.pauseReason} Overdue reminders are off during the pause.</Alert>}
         {proposed && (
           <Card className="border-primary/50 bg-primary/5">
             <form action={scopeAction} id="scope">
@@ -151,7 +153,9 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
           <TabsContent value="overview" className="mt-4 grid gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Milestones</CardTitle>
+                <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">Milestones
+                  <Button asChild size="sm" variant="outline"><a href={`/api/calendar/${id}`}><Download /> Add to calendar</a></Button>
+                </CardTitle>
                 <CardDescription>{done} of {w.milestones.length} done · dates in {tz}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -214,7 +218,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                   ))}
                   {!w.messages.length && <li className="text-sm text-muted-foreground">No messages yet. Questions are welcome; your mentor expects them.</li>}
                 </ol>
-                <form action={messageAction} className="grid gap-2 border-t pt-4">
+                {w.contactRestricted ? <Alert tone="info">Direct contact is restricted. Use Support while staff arrange next steps.</Alert> : <form action={messageAction} className="grid gap-2 border-t pt-4">
                   <input type="hidden" name="enrollmentId" value={id} />
                   <Label htmlFor="body">New message</Label>
                   <textarea id="body" name="body" rows={3} required className="rounded-md border bg-background p-2 text-sm"
@@ -228,7 +232,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                     <UnsavedGuard />
                     <Button className="ml-auto" size="sm"><Send /> Post</Button>
                   </div>
-                </form>
+                </form>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -389,6 +393,33 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
                   <p className="text-xs text-muted-foreground">Backup contact: {w.v.content.backupContact}</p>
                 </CardContent>
               </form>
+            </Card>
+          )}
+          {isStudent && w.e.state === "completed" && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Private feedback</CardTitle><CardDescription>Program staff see this. The mentor and company do not.</CardDescription></CardHeader>
+              <CardContent className="grid gap-5">
+                {[
+                  { type: "mentor_feedback", title: "Mentor", labels: ["Clarity", "Responsiveness", "Usefulness", "Respect"] },
+                  { type: "project_feedback", title: "Project", labels: ["Scope", "Resources", "Learning value", "Mentor support"] },
+                ].map((f) => <form action={feedbackAction} className="grid gap-2 border-t pt-4 first:border-0 first:pt-0" key={f.type}>
+                  <input type="hidden" name="enrollmentId" value={id} /><input type="hidden" name="type" value={f.type} />
+                  <p className="font-medium">{f.title}</p>
+                  <div className="grid grid-cols-2 gap-2">{f.labels.map((label, i) => <Field key={label} label={`${label} (1–5)`} name={`rating${i}`} type="number" min={1} max={5} required />)}</div>
+                  <TextArea label="Private comment (optional)" name="comment" rows={2} />
+                  <Button size="sm" variant="secondary" className="justify-self-start">Send {f.title.toLowerCase()} feedback</Button>
+                </form>)}
+              </CardContent>
+            </Card>
+          )}
+          {isStudent && w.mentor && !w.contactRestricted && !decided && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Contact safety</CardTitle><CardDescription>Restrict direct contact now. Staff will arrange support or reassignment.</CardDescription></CardHeader>
+              <CardContent className="grid gap-4">{contacts.map((person) => <form action={blockContactAction} className="grid gap-3" key={person.id}>
+                <input type="hidden" name="enrollmentId" value={id} /><input type="hidden" name="userId" value={person.id} />
+                <TextArea label="What happened?" name="reason" rows={2} required minLength={10} />
+                <Button size="sm" variant="destructive" className="justify-self-start">Block contact from {person.name}</Button>
+              </form>)}</CardContent>
             </Card>
           )}
           <Card>

@@ -2,6 +2,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -31,7 +32,11 @@ export function makeAuth(db: Db) {
     // ACC-05, AC-16: moving from a university address to a personal one. The link goes to the new address,
     // and the switch happens only when it's opened.
     user: { additionalFields: { isStaff: { type: "boolean", input: false, defaultValue: false } }, changeEmail: { enabled: true } },
-    plugins: [nextCookies()],
+    plugins: [twoFactor({
+      totpOptions: { disable: true },
+      otpOptions: { period: 5, allowedAttempts: 5, storeOTP: "hashed", sendOTP: ({ user, otp }) =>
+        sendEmail(user.email, "Your IndustryQuest sign-in code", `Your sign-in code is ${otp}. It expires in five minutes. If you did not try to sign in, reset your password.`) },
+    }), nextCookies()],
   });
 }
 

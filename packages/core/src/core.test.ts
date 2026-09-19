@@ -77,6 +77,8 @@ test("publishing is blocked without mentor, rubric or compensation (AC-02)", () 
   expect(canPublish({ ...empty, mentorId: "m1", compensation: "unpaid", rubric }, { verified: true })).toEqual([]);
   expect(canPublish({ ...empty, mentorId: "m1", compensation: "unpaid", rubric }, { verified: true, mentorConfirmed: false }))
     .toEqual(["Wait for the mentor to confirm they'll support this project."]);
+  expect(canPublish({ ...empty, mentorId: "m1", compensation: "unpaid", rubric }, { verified: true, mentorConfirmed: true, suspended: true }))
+    .toEqual(["Program staff have paused new activity for this organization."]);
   expect(canPublish({ ...empty, mentorId: "m1", compensation: "paid", compensationDetails: "€300", rubric, selectionMethod: "" }, { verified: true }))
     .toEqual(["Say who pays and through which process.", "Say how you'll choose between applicants."]);
 });

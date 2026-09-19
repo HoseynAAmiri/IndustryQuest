@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { asc, eq, isNull } from "drizzle-orm";
-import { BadgeCheck, ChevronRight } from "lucide-react";
+import { asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { BadgeCheck, ChevronRight, History } from "lucide-react";
 import { briefVersions, mentorProfiles, organizations, projects, user } from "@iq/db";
 import { Alert, Button, Field, Page, messages, when } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { requireUser } from "@/server/auth";
 import { getRoles } from "@/server/authz";
 import { getDb } from "@/server/db";
 import { mentorCoverage, runEscalations } from "@/server/staff";
-import { verify, verifyMentorAction } from "./actions";
+import { suspensionAction, verify, verifyMentorAction } from "./actions";
 
 export const metadata: Metadata = { title: "Staff queue" };
 
@@ -35,6 +35,8 @@ export default async function Staff({ searchParams }: PageProps<"/staff">) {
   const { lateReviews, lateMilestones } = await runEscalations(db);
   const { unconfirmed, mentors } = await mentorCoverage(db);
   const orgs = await db.select().from(organizations).where(isNull(organizations.verifiedAt)).orderBy(asc(organizations.createdAt));
+  const verifiedOrgs = await db.select({ org: organizations, verifier: user.name }).from(organizations)
+    .leftJoin(user, eq(user.id, organizations.verifiedBy)).where(isNotNull(organizations.verifiedAt)).orderBy(desc(organizations.verifiedAt)).limit(8);
   const unverifiedMentors = await db.select({ id: user.id, name: user.name, headline: mentorProfiles.headline }).from(mentorProfiles)
     .innerJoin(user, eq(user.id, mentorProfiles.userId)).where(isNull(mentorProfiles.verifiedAt));
   const queue = await db.select({ id: projects.id, title: briefVersions.title, tier: briefVersions.tier, org: organizations.name, since: projects.updatedAt })
@@ -120,6 +122,28 @@ export default async function Staff({ searchParams }: PageProps<"/staff">) {
             </li>
           ))}
           {!orgs.length && !unverifiedMentors.length && <Empty text="No one waiting." />}
+        </Queue>
+
+        <Queue title="Recently verified organizations" count={verifiedOrgs.length}
+          description="Verification stays here after it leaves the waiting queue. The full record is in the audit log.">
+          {verifiedOrgs.map(({ org, verifier }) => (
+            <li key={org.id} className="grid gap-3 p-3 text-sm">
+              <div className="flex items-start gap-3">
+              <History className="mt-0.5 size-4 text-muted-foreground" aria-hidden />
+              <span className="flex-1"><span className="block font-medium">{org.name}{org.suspendedAt && <Badge variant="destructive" className="ml-2">Suspended</Badge>}</span>
+                <span className="text-muted-foreground">Verified by {verifier ?? "staff"} · {when(org.verifiedAt, "UTC", true)}</span>
+                {org.verificationNote && <span className="block text-muted-foreground">Checked: {org.verificationNote}</span>}
+                {org.suspensionReason && <span className="block text-destructive">Reason: {org.suspensionReason}</span>}
+              </span>
+              </div>
+              <form action={suspensionAction} className="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="orgId" value={org.id} /><input type="hidden" name="action" value={org.suspendedAt ? "resume" : "suspend"} />
+                {!org.suspendedAt && <div className="min-w-48 flex-1"><Field label="Suspension reason" name="reason" required minLength={10} /></div>}
+                <Button size="sm" variant={org.suspendedAt ? "outline" : "destructive"}>{org.suspendedAt ? "Restore participation" : "Suspend organization"}</Button>
+              </form>
+            </li>
+          ))}
+          {!verifiedOrgs.length && <Empty text="No organizations verified yet." />}
         </Queue>
       </div>
     </Page>

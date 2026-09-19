@@ -1,7 +1,7 @@
 "use server";
 import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
-import { addCaseUpdate, openCase, resolveCase, takeCase, type CaseType, type Resolution } from "@/server/cases";
+import { addCaseUpdate, blockContact, openCase, resolveCase, takeCase, type CaseType, type Resolution } from "@/server/cases";
 import { getDb } from "@/server/db";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "");
@@ -30,9 +30,17 @@ export async function takeCaseAction(f: FormData) {
 export async function resolveCaseAction(f: FormData) {
   const u = await requireUser();
   const kind = s(f, "action");
-  const action: Resolution = kind === "extend" ? { kind, days: Number(s(f, "days")) || 7 }
+  const action: Resolution = kind === "extend" || kind === "pause" ? { kind, days: Number(s(f, "days")) || 7 }
     : kind === "replace_mentor" ? { kind, mentorId: s(f, "mentorId") }
-    : kind === "reopen" || kind === "close" || kind === "grant_equivalency" ? { kind } : { kind: "none" };
+    : kind === "reopen" || kind === "close" || kind === "grant_equivalency" || kind === "delete_account" ? { kind } : { kind: "none" };
   await act(`/staff/cases/${s(f, "caseId")}`, () => resolveCase(getDb(), u, { caseId: s(f, "caseId"), resolution: s(f, "resolution"), action }),
     { to: "/staff/cases", info: "Case resolved and the reporter notified." });
+}
+
+export async function blockContactAction(f: FormData) {
+  const u = await requireUser();
+  const enrollmentId = s(f, "enrollmentId");
+  await act(`/workspace/${enrollmentId}`, () => blockContact(getDb(), u, {
+    enrollmentId, userId: s(f, "userId"), reason: s(f, "reason"),
+  }), { to: "/support", info: "Contact restricted. Staff will arrange safe next steps." });
 }

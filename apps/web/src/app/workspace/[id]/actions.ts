@@ -2,7 +2,9 @@
 import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
+import { UserError } from "@/server/errors";
 import { respondToScopeChange } from "@/server/enrollments";
+import { openCase, type CaseType } from "@/server/cases";
 import { addLink, postMessage, saveSubmissionDraft, submit, toggleMilestone } from "@/server/workspace";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "");
@@ -44,4 +46,17 @@ export async function draftAction(f: FormData) {
   const u = await requireUser();
   await act(at(f, "submissions"), () => saveSubmissionDraft(getDb(), u, { enrollmentId: s(f, "enrollmentId"), contribution: s(f, "contribution"), reflection: s(f, "reflection") }),
     { info: "Draft saved. Only you can see it." });
+}
+
+export async function feedbackAction(f: FormData) {
+  const u = await requireUser();
+  const enrollmentId = s(f, "enrollmentId");
+  const type = s(f, "type") as Extract<CaseType, "mentor_feedback" | "project_feedback">;
+  const labels = type === "mentor_feedback" ? ["Clarity", "Responsiveness", "Usefulness", "Respect"] : ["Scope", "Resources", "Learning value", "Mentor support"];
+  const values = labels.map((_, i) => Number(s(f, `rating${i}`)));
+  const ratings = labels.map((label, i) => `${label}: ${values[i]}/5`);
+  await act(`/workspace/${enrollmentId}`, () => {
+    if (values.some((n) => !Number.isInteger(n) || n < 1 || n > 5)) throw new UserError("Rate each item from 1 to 5.");
+    return openCase(getDb(), u, { type, enrollmentId, summary: `${ratings.join("\n")}\n\n${s(f, "comment") || "No additional comment."}` });
+  }, { info: "Private feedback sent to program staff." });
 }

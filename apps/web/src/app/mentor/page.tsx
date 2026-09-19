@@ -3,7 +3,7 @@ import Link from "next/link";
 import { and, asc, desc, eq, inArray, isNull, lt, ne } from "drizzle-orm";
 import { ArrowRight, ClipboardCheck, Clock, Inbox, Users } from "lucide-react";
 import { assessments, briefVersions, cases, enrollments, mentorProfiles, messages as msgs, milestones, organizations, projects, submissions, user } from "@iq/db";
-import { mentorProfileAction } from "./actions";
+import { mentorProfileAction, welcomeAction } from "./actions";
 import { Field, SelectField } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
 import { confirmMentoringAction } from "@/app/company/actions";
@@ -144,6 +144,7 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
                 <li key={m.e.id} className="flex items-center gap-3 p-3">
                   <span className="flex-1"><span className="block font-medium">{m.student}</span><span className="text-sm text-muted-foreground">{m.title}</span></span>
                   <EnrollmentBadge state={m.e.state} />
+                  {m.e.state === "active" && <form action={welcomeAction}><input type="hidden" name="enrollmentId" value={m.e.id} /><Button size="sm" variant="outline">Send welcome</Button></form>}
                   <Button asChild size="sm" variant="ghost"><Link href={`/workspace/${m.e.id}`}>Open</Link></Button>
                 </li>
               ))}

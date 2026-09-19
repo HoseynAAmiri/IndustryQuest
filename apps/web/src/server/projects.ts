@@ -67,8 +67,8 @@ export async function confirmMentoring(db: Db, actor: Actor, projectId: string) 
   await notifyAll(db, await ownersOf(db, project.orgId), { kind: "mentoring", title: `Mentor confirmed: ${brief.title}`, href: `/company/projects/${projectId}`, key: `mentor-ok:${projectId}:${actor.id}` });
 }
 
-const gate = (b: Brief, p: { mentorConfirmedAt: Date | null }, org: { verifiedAt: Date | null }) =>
-  canPublish(briefSchema.parse(b), { verified: !!org.verifiedAt, mentorConfirmed: !!p.mentorConfirmedAt });
+const gate = (b: Brief, p: { mentorConfirmedAt: Date | null }, org: { verifiedAt: Date | null; suspendedAt?: Date | null }) =>
+  canPublish(briefSchema.parse(b), { verified: !!org.verifiedAt, mentorConfirmed: !!p.mentorConfirmedAt, suspended: !!org.suspendedAt });
 
 export async function submitForReview(db: Db, actor: Actor, projectId: string) {
   const { project, brief, org } = await loadProject(db, projectId);

@@ -32,11 +32,27 @@ export async function signUp(form: FormData) {
 
 export async function signIn(form: FormData) {
   const email = str(form, "email");
-  const err = await attempt(async () =>
-    getAuth().api.signInEmail({ body: { email, password: String(form.get("password")) }, headers: await headers() }),
-  );
+  const requestHeaders = await headers();
+  let result: { twoFactorRedirect?: boolean } | undefined;
+  const err = await attempt(async () => {
+    result = await getAuth().api.signInEmail({ body: { email, password: String(form.get("password")) }, headers: requestHeaders }) as unknown as { twoFactorRedirect?: boolean };
+  });
   if (err === "Email not verified") redirect(`/check-email?email=${encodeURIComponent(email)}&resent=1`);
   if (err) back("/sign-in", err);
+  if (result?.twoFactorRedirect) {
+    const otpError = await attempt(() => getAuth().api.sendTwoFactorOTP({ body: {}, headers: requestHeaders }));
+    if (otpError) back("/sign-in", otpError);
+    redirect("/two-factor");
+  }
+  redirect("/");
+}
+
+export async function verifyTwoFactor(form: FormData) {
+  const requestHeaders = await headers();
+  const err = await attempt(() => getAuth().api.verifyTwoFactorOTP({
+    body: { code: str(form, "code"), trustDevice: form.get("trustDevice") === "on" }, headers: requestHeaders,
+  }));
+  if (err) back("/two-factor", err);
   redirect("/");
 }
 

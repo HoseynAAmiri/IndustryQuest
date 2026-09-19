@@ -13,7 +13,7 @@ beforeEach(async () => {
 afterAll(() => db.pool.end());
 
 export async function makeUser(id: string, extra: { isStaff?: boolean; student?: boolean } = {}) {
-  await db.insert(user).values({ id, name: id, email: `${id}@test.local`, emailVerified: true, isStaff: !!extra.isStaff });
+  await db.insert(user).values({ id, name: id, email: `${id}@test.local`, emailVerified: true, isStaff: !!extra.isStaff, twoFactorEnabled: true });
   if (extra.student) await db.insert(studentProfiles).values({ userId: id });
   return { id };
 }

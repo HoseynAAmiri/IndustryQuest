@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
-import { tierFor, tierRank } from "@iq/core";
+import { criterionSchema, tierFor, tierRank } from "@iq/core";
 import {
-  assessments, briefVersions, credentials, enrollments, equivalencies, mentorProfiles, milestones, organizations,
-  skillEvidence, skills, studentProfiles, submissions, user, xpTransactions, type Db,
+  assessments, auditEvents, briefVersions, credentials, enrollments, equivalencies, holidays, mentorProfiles, milestones, organizations, projects,
+  rubricTemplates, skillEvidence, skills, studentProfiles, submissions, user, xpTransactions, type Db,
 } from "@iq/db";
 import { assertStaff, type Actor } from "./authz";
 import { UserError } from "./errors";
@@ -87,9 +87,12 @@ export async function verifyMentor(db: Db, actor: Actor, input: { userId: string
   await audit(db, actor.id, "mentor_verified", "user", input.userId, input.note.trim());
 }
 
-const businessDaysAgo = (n: number) => {
+const businessDaysAgo = (n: number, daysOff = new Set<string>()) => {
   const d = new Date();
-  for (let left = n; left > 0;) { d.setDate(d.getDate() - 1); if (d.getDay() % 6) left--; }
+  for (let left = n; left > 0;) {
+    d.setDate(d.getDate() - 1);
+    if (d.getDay() % 6 && !daysOff.has(d.toISOString().slice(0, 10))) left--;
+  }
   return d;
 };
 
@@ -98,12 +101,14 @@ const businessDaysAgo = (n: number) => {
 // students waiting on an extension request aren't nagged.
 // ponytail: runs when staff or mentors load their pages; move to a Cloudflare Cron Trigger for real use.
 export async function runEscalations(db: Db) {
+  const daysOff = new Set((await db.select({ day: holidays.day }).from(holidays)).map((h) => h.day));
   const lateReviews = await db.select({ s: submissions, e: enrollments, title: briefVersions.title, student: user.name }).from(submissions)
     .innerJoin(enrollments, eq(enrollments.id, submissions.enrollmentId))
     .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
     .innerJoin(user, eq(user.id, enrollments.studentId))
     .leftJoin(assessments, eq(assessments.submissionId, submissions.id))
-    .where(and(eq(enrollments.state, "submitted"), isNull(assessments.id), lt(submissions.createdAt, businessDaysAgo(5))));
+    .where(and(eq(enrollments.state, "submitted"), isNull(assessments.id), lt(submissions.createdAt, businessDaysAgo(5, daysOff)),
+      sql`(${enrollments.pausedUntil} is null or ${enrollments.pausedUntil} <= now())`));
   for (const r of lateReviews) {
     if (r.e.mentorId) await notify(db, { userId: r.e.mentorId, kind: "review", essential: true, title: `Review past the 5-day target: ${r.student}`,
       body: "Please review, or tell program staff if you can't.", href: `/mentor/review/${r.s.id}`, key: `late-review:${r.s.id}` });
@@ -115,6 +120,7 @@ export async function runEscalations(db: Db) {
     .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
     .innerJoin(user, eq(user.id, enrollments.studentId))
     .where(and(isNull(milestones.doneAt), lt(milestones.dueAt, new Date()), inArray(enrollments.state, ["active", "revision_requested"]),
+      sql`(${enrollments.pausedUntil} is null or ${enrollments.pausedUntil} <= now())`,
       sql`${enrollments.id} not in (select enrollment_id from cases where type = 'extension' and status <> 'resolved' and enrollment_id is not null)`));
   for (const r of lateMilestones)
     await notify(db, { userId: r.e.studentId, kind: "milestone", title: `Milestone overdue: ${r.m.title}`,
@@ -135,8 +141,95 @@ export async function mentorCoverage(db: Db) {
 export async function verifyOrgWithNote(db: Db, actor: Actor, input: { orgId: string; note: string }) {
   await assertStaff(db, actor);
   if (input.note.trim().length < 5) throw new UserError("Say what you checked.");
-  await db.update(organizations).set({ verifiedAt: new Date(), verifiedBy: actor.id, verificationNote: input.note.trim() }).where(eq(organizations.id, input.orgId));
-  await audit(db, actor.id, "organization_verified", "organization", input.orgId, input.note.trim());
+  const now = new Date();
+  const event = await db.transaction(async (tx) => {
+    const [org] = await tx.update(organizations).set({ verifiedAt: now, verifiedBy: actor.id, verificationNote: input.note.trim() })
+      .where(and(eq(organizations.id, input.orgId), isNull(organizations.verifiedAt))).returning({ id: organizations.id });
+    if (!org) throw new UserError("This organization is already verified or no longer exists.");
+    return audit(tx, actor.id, "organization_verified", "organization", org.id, input.note.trim(), { verifiedAt: now.toISOString() });
+  });
   await notifyAll(db, await ownersOf(db, input.orgId), { kind: "org", essential: true, title: "Your organization is verified", body: "You can now submit briefs for review.",
     href: "/company", key: `org-verified:${input.orgId}` });
+  return { eventId: event.id, orgId: input.orgId };
+}
+
+export async function undoOrgVerification(db: Db, actor: Actor, input: { orgId: string; eventId: string }) {
+  await assertStaff(db, actor);
+  const [event] = await db.select().from(auditEvents).where(and(
+    eq(auditEvents.id, input.eventId), eq(auditEvents.action, "organization_verified"),
+    eq(auditEvents.targetType, "organization"), eq(auditEvents.targetId, input.orgId), eq(auditEvents.actorId, actor.id),
+  ));
+  const verifiedAt = typeof event?.meta.verifiedAt === "string" ? new Date(event.meta.verifiedAt) : null;
+  if (!event || !verifiedAt || Number.isNaN(verifiedAt.valueOf()) || Date.now() - event.createdAt.valueOf() > 10 * 60_000)
+    throw new UserError("That verification can no longer be undone.");
+  const dependent = await db.select({ id: projects.id }).from(projects)
+    .where(and(eq(projects.orgId, input.orgId), inArray(projects.state, ["in_review", "published", "paused"]))).limit(1);
+  if (dependent.length) throw new UserError("This organization now has active or reviewed briefs, so verification cannot be undone.");
+  await db.transaction(async (tx) => {
+    const [org] = await tx.update(organizations).set({ verifiedAt: null, verifiedBy: null, verificationNote: null })
+      .where(and(eq(organizations.id, input.orgId), eq(organizations.verifiedAt, verifiedAt))).returning({ id: organizations.id });
+    if (!org) throw new UserError("The verification changed after this action and was not undone.");
+    await audit(tx, actor.id, "organization_verification_undone", "organization", org.id, "Undone within 10 minutes.", { verificationEventId: event.id });
+  });
+  await notifyAll(db, await ownersOf(db, input.orgId), { kind: "org", essential: true, title: "Organization verification was withdrawn",
+    body: "Program staff will contact you if anything else is needed.", href: "/company", key: `org-unverified:${event.id}` });
+}
+
+export async function setOrgSuspension(db: Db, actor: Actor, input: { orgId: string; suspend: boolean; reason: string }) {
+  await assertStaff(db, actor);
+  if (input.suspend && input.reason.trim().length < 10) throw new UserError("Record why participation is being suspended.");
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    const [org] = await tx.update(organizations).set(input.suspend
+      ? { suspendedAt: now, suspendedBy: actor.id, suspensionReason: input.reason.trim() }
+      : { suspendedAt: null, suspendedBy: null, suspensionReason: null })
+      .where(eq(organizations.id, input.orgId)).returning({ id: organizations.id });
+    if (!org) throw new UserError("Organization not found.");
+    if (input.suspend) await tx.update(projects).set({ state: "paused", stateReason: input.reason.trim(), updatedAt: now })
+      .where(and(eq(projects.orgId, org.id), eq(projects.state, "published")));
+    await audit(tx, actor.id, input.suspend ? "organization_suspended" : "organization_reinstated", "organization", org.id, input.reason.trim() || undefined);
+  });
+  await notifyAll(db, await ownersOf(db, input.orgId), { kind: "org", essential: true,
+    title: input.suspend ? "Organization participation suspended" : "Organization participation restored",
+    body: input.suspend ? input.reason.trim() : "Program staff restored access. Paused listings remain paused until you reopen them.",
+    href: "/company", key: `org-suspension:${input.orgId}:${now.toISOString()}` });
+}
+
+export async function saveSkill(db: Db, actor: Actor, input: { id: string; name: string; aliases: string; active: boolean }) {
+  await assertStaff(db, actor);
+  const id = input.id.trim().toLowerCase();
+  const name = input.name.trim();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) || name.length < 2) throw new UserError("Use a lowercase dash-separated ID and a skill name.");
+  const aliases = [...new Set(input.aliases.split(",").map((x) => x.trim()).filter(Boolean))];
+  const [before] = await db.select().from(skills).where(eq(skills.id, id));
+  await db.insert(skills).values({ id, name, aliases, active: input.active }).onConflictDoUpdate({ target: skills.id, set: { name, aliases, active: input.active, updatedAt: new Date() } });
+  await audit(db, actor.id, before ? "skill_updated" : "skill_created", "skill", id, undefined, { before, after: { name, aliases, active: input.active } });
+}
+
+export async function saveRubricTemplate(db: Db, actor: Actor, input: { name: string; criterion: string; description: string; threshold: number; skillId?: string }) {
+  await assertStaff(db, actor);
+  if (input.name.trim().length < 3) throw new UserError("Name the rubric template.");
+  if (input.criterion.trim().length < 3 || input.description.trim().length < 10) throw new UserError("Write a criterion and a clear standard.");
+  const parsed = criterionSchema.safeParse({ id: "c1", name: input.criterion.trim(), description: input.description.trim(), critical: true,
+    threshold: Math.max(1, Math.min(4, Math.round(input.threshold))), skillId: input.skillId || undefined });
+  if (!parsed.success) throw new UserError("Check the rubric criterion and threshold.");
+  const criterion = parsed.data;
+  const [latest] = await db.select({ version: rubricTemplates.version }).from(rubricTemplates)
+    .where(eq(rubricTemplates.name, input.name.trim())).orderBy(desc(rubricTemplates.version)).limit(1);
+  const [row] = await db.insert(rubricTemplates).values({ name: input.name.trim(), criteria: [criterion], version: (latest?.version ?? 0) + 1, updatedBy: actor.id }).returning();
+  await audit(db, actor.id, "rubric_template_versioned", "rubric_template", row.id, undefined, { name: row.name, version: row.version });
+}
+
+export async function setHoliday(db: Db, actor: Actor, input: { day: string; name?: string }) {
+  await assertStaff(db, actor);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.day)) throw new UserError("Choose a date.");
+  if (input.name) {
+    if (input.name.trim().length < 2) throw new UserError("Name the holiday.");
+    await db.insert(holidays).values({ day: input.day, name: input.name.trim(), createdBy: actor.id })
+      .onConflictDoUpdate({ target: holidays.day, set: { name: input.name.trim(), createdBy: actor.id } });
+    await audit(db, actor.id, "holiday_saved", "holiday", input.day, input.name.trim());
+  } else {
+    await db.delete(holidays).where(eq(holidays.day, input.day));
+    await audit(db, actor.id, "holiday_removed", "holiday", input.day);
+  }
 }
