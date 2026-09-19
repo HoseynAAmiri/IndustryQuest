@@ -20,7 +20,7 @@ const businessDaysSince = (d: Date) => {
 export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
   const me = await requireUser();
   const db = getDb();
-  const { error, info } = await messages(searchParams);
+  const { error } = await messages(searchParams);
   const mine = await db.select({ e: enrollments, title: briefVersions.title, student: user.name }).from(enrollments)
     .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
     .innerJoin(user, eq(user.id, enrollments.studentId))
@@ -41,7 +41,7 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
 
   return (
     <Page title="Review queue" description="Submissions waiting for you, and the students you support.">
-      <div className="mb-6 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="mb-6 grid gap-3"><Alert>{error}</Alert></div>
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="Waiting for review" value={queue.length} icon={ClipboardCheck} hint="Target: feedback within 5 business days" />
         <Stat label="Past the target" value={overdue} icon={Clock} hint={overdue ? "Staff get an escalation for these" : "Nothing overdue"} />

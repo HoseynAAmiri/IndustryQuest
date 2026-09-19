@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
+import { ConfirmSubmit } from "@/components/confirm";
 import { assessAction } from "../../actions";
 
 const SCALE = [
@@ -33,7 +34,7 @@ export default async function Review({ params, searchParams }: PageProps<"/mento
       back={{ href: "/mentor", label: "Review queue" }}>
       <div className="mb-6"><Alert>{error}</Alert></div>
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-        <form action={assessAction} className="grid gap-4">
+        <form action={assessAction} id="assess" className="grid gap-4">
           <input type="hidden" name="submissionId" value={id} />
           {row.v.content.rubric.map((c) => (
             <Card key={c.id}>
@@ -70,7 +71,10 @@ export default async function Review({ params, searchParams }: PageProps<"/mento
             <CardFooter className="flex-wrap gap-2">
               <Button name="decision" value="accept" disabled={!open}>Accept work</Button>
               <Button name="decision" value="revise" variant="secondary" disabled={!open}>Request revision</Button>
-              <Button name="decision" value="not_complete" variant="ghost" disabled={!open}>Not completed</Button>
+              <ConfirmSubmit formId="assess" name="decision" value="not_complete" variant="ghost" disabled={!open}
+                ask={{ title: "Close as not completed?", description: "The project ends without a credential or XP. The student is told why and can appeal. Consider a revision first.", confirm: "Close as not completed", destructive: true }}>
+                Not completed
+              </ConfirmSubmit>
             </CardFooter>
           </Card>
         </form>

@@ -61,7 +61,7 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
       actions={<EnrollmentBadge state={w.e.state} />}>
       <div className="mb-6 grid gap-3">
         <Alert>{error}</Alert>
-        <Alert tone="info">{info}</Alert>
+        
         {w.e.state === "revision_requested" && lastReview && (
           <Card className="border-amber-500/50 bg-amber-50/60 dark:bg-amber-950/20">
             <CardHeader>

@@ -16,7 +16,7 @@ const one = (v: string | string[] | undefined) => (typeof v === "string" && v !=
 
 export default async function Explore({ searchParams }: PageProps<"/explore">) {
   const sp = await searchParams;
-  const { error, info } = await messages(searchParams);
+  const { error } = await messages(searchParams);
   const f: Filters = {
     q: one(sp.q), skill: one(sp.skill), tier: one(sp.tier), compensation: one(sp.compensation),
     maxHours: Number(one(sp.maxHours)) || undefined,
@@ -60,7 +60,7 @@ export default async function Explore({ searchParams }: PageProps<"/explore">) {
     <Page title="Explore projects"
       description={isStudent ? "Sorted by fit: your interests, weekly time and skill evidence. Projects you can't join yet sink to the end."
         : "Real, scoped projects from partner companies. Sign in to see how each one fits you."}>
-      <div className="mb-4 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="mb-4 grid gap-3"><Alert>{error}</Alert></div>
       <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
         <Card className="hidden h-fit lg:sticky lg:top-20 lg:block">
           <CardHeader><CardTitle className="flex items-center gap-2 text-base"><SlidersHorizontal className="size-4" /> Filters</CardTitle></CardHeader>

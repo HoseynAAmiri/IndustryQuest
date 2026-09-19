@@ -9,6 +9,7 @@ import { Button, EnrollmentBadge, when } from "@/components/ui";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { expireStaleOffers } from "@/server/enrollments";
+import { ConfirmForm } from "@/components/confirm";
 import { offerAction, rejectAction } from "./actions";
 
 // ENR-03: owners review applicants against the declared criteria. They see the application only,
@@ -53,12 +54,11 @@ export async function Applicants({ db, projectId, capacity, openPlaces }: { db: 
                   <input type="hidden" name="enrollmentId" value={e.id} />
                   <Button size="sm" disabled={!openPlaces}>Make an offer</Button>
                 </form>
-                <form action={rejectAction} className="flex flex-1 gap-2">
-                  <input type="hidden" name="projectId" value={projectId} />
-                  <input type="hidden" name="enrollmentId" value={e.id} />
-                  <Input name="note" aria-label={`Reason for ${name}`} placeholder="Constructive reason (optional)" className="h-8 min-w-40 flex-1" />
-                  <Button size="sm" variant="outline">Decline</Button>
-                </form>
+                <ConfirmForm action={rejectAction} fields={{ projectId, enrollmentId: e.id }} className="flex flex-1 gap-2" size="sm" variant="outline"
+                  extra={<Input name="note" aria-label={`Reason for ${name}`} placeholder="Constructive reason (optional)" className="h-8 min-w-40 flex-1" />}
+                  ask={{ title: `Decline ${name}?`, description: "They'll see your reason, if you gave one. No rating or penalty goes on their profile.", confirm: "Decline", destructive: true }}>
+                  Decline
+                </ConfirmForm>
               </div>
             </div>
           ))}

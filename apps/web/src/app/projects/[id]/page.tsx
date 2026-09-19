@@ -21,7 +21,7 @@ const TIER_NAME = { emerging: "Emerging", bronze: "Bronze", none: "no evidence y
 
 export default async function ProjectPage({ params, searchParams }: PageProps<"/projects/[id]">) {
   const { id } = await params;
-  const { error, info } = await messages(searchParams);
+  const { error } = await messages(searchParams);
   const db = getDb();
   const row = await loadProject(db, id).catch(() => null);
   if (!row) notFound();
@@ -54,7 +54,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
   return (
     <Page title={b.title} description={org.name} back={{ href: "/explore", label: "Explore projects" }}
       actions={insider && project.state !== "published" ? <Badge variant="secondary">Preview: {project.state.replace("_", " ")}</Badge> : undefined}>
-      <div className="mb-4 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="mb-4 grid gap-3"><Alert>{error}</Alert></div>
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="order-2 lg:order-1">
           <p className="mb-6 text-lg text-muted-foreground">{b.summary}</p>

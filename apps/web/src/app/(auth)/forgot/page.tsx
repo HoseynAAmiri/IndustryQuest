@@ -9,7 +9,7 @@ export default async function Forgot({ searchParams }: PageProps<"/forgot">) {
     <AuthCard title="Reset your password" description="We'll email you a link to choose a new one."
       footer={<Link className="font-medium text-primary underline-offset-4 hover:underline" href="/sign-in">Back to sign in</Link>}>
       <form action={forgotPassword} className="grid gap-4">
-        <Alert tone="info">{info}</Alert>
+        
         <Field label="Email" name="email" type="email" autoComplete="email" required />
         <Button type="submit" className="w-full">Send reset link</Button>
       </form>

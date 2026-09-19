@@ -11,6 +11,7 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { expireStaleOffers } from "@/server/enrollments";
 import { issuePendingFor } from "@/server/rewards";
+import { ConfirmForm, ConfirmSubmit } from "@/components/confirm";
 import { respond, withdrawAction } from "./actions";
 
 export const metadata: Metadata = { title: "My quests" };
@@ -20,7 +21,7 @@ export default async function Quests({ searchParams }: PageProps<"/quests">) {
   const db = getDb();
   const [profile] = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, me.id));
   if (!profile) redirect("/onboarding");
-  const { error, info } = await messages(searchParams);
+  const { error } = await messages(searchParams);
   await expireStaleOffers(db);
   await issuePendingFor(db, me.id);
   const rows = await db.select({ e: enrollments, v: briefVersions, org: organizations.name, mentor: user.name })
@@ -59,11 +60,11 @@ export default async function Quests({ searchParams }: PageProps<"/quests">) {
 
   return (
     <Page title="My quests" description="Applications, offers, work in progress and finished projects.">
-      <div className="mb-6 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="mb-6 grid gap-3"><Alert>{error}</Alert></div>
 
       {offers.map((r) => (
         <Card key={r.e.id} className="mb-6 border-primary/50 bg-primary/5">
-          <form action={respond}>
+          <form action={respond} id={`offer-${r.e.id}`}>
             <CardHeader>
               <CardDescription>Offer from {r.org}</CardDescription>
               <CardTitle>{r.v.title}</CardTitle>
@@ -81,7 +82,10 @@ export default async function Quests({ searchParams }: PageProps<"/quests">) {
             </CardContent>
             <CardFooter className="mt-4 flex-wrap gap-2">
               <Button name="decision" value="accept">Accept offer</Button>
-              <Button name="decision" value="decline" variant="outline">Decline</Button>
+              <ConfirmSubmit formId={`offer-${r.e.id}`} name="decision" value="decline" variant="outline"
+                ask={{ title: "Decline this offer?", description: "The place goes back to the company. Nothing changes on your profile.", confirm: "Decline offer", destructive: true }}>
+                Decline
+              </ConfirmSubmit>
               <Button asChild variant="ghost"><Link href={`/projects/${r.e.projectId}`}>Read the brief again</Link></Button>
             </CardFooter>
           </form>
@@ -111,10 +115,10 @@ export default async function Quests({ searchParams }: PageProps<"/quests">) {
             <Row key={r.e.id} r={r}>
               <CardFooter className="justify-between gap-2">
                 <span className="text-sm text-muted-foreground">Sent {when(r.e.createdAt, tz)}. The company decides by its published criteria.</span>
-                <form action={withdrawAction}>
-                  <input type="hidden" name="enrollmentId" value={r.e.id} />
-                  <Button size="sm" variant="ghost">Withdraw</Button>
-                </form>
+                <ConfirmForm action={withdrawAction} fields={{ enrollmentId: r.e.id }} size="sm" variant="ghost"
+                  ask={{ title: "Withdraw this application?", description: "The company stops considering you. Nothing negative goes on your profile, and you can apply again later.", confirm: "Withdraw", destructive: true }}>
+                  Withdraw
+                </ConfirmForm>
               </CardFooter>
             </Row>
           ))}

@@ -14,7 +14,7 @@ export default async function Staff({ searchParams }: PageProps<"/staff">) {
   const user = await requireUser();
   const db = getDb();
   if (!(await getRoles(db, user.id)).isStaff) return <Page title="Staff"><Alert>Staff only.</Alert></Page>;
-  const { error, info } = await messages(searchParams);
+  const { error } = await messages(searchParams);
   const orgs = await db.select().from(organizations).where(isNull(organizations.verifiedAt)).orderBy(asc(organizations.createdAt));
   const queue = await db.select({ id: projects.id, title: briefVersions.title, tier: briefVersions.tier, org: organizations.name, since: projects.updatedAt })
     .from(projects).innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId))
@@ -22,7 +22,7 @@ export default async function Staff({ searchParams }: PageProps<"/staff">) {
     .where(eq(projects.state, "in_review")).orderBy(asc(projects.updatedAt));
   return (
     <Page title="Staff queue" description="Briefs to check before they go live, and organizations to verify.">
-      <div className="mb-6 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="mb-6 grid gap-3"><Alert>{error}</Alert></div>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>

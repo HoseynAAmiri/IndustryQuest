@@ -19,6 +19,7 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { CLAIM_LEVELS } from "@/server/profile";
 import { issuePendingFor } from "@/server/rewards";
+import { ConfirmSubmit } from "@/components/confirm";
 import { saveProfileAction, shareAction, skillAction } from "./actions";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -35,7 +36,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
   const db = getDb();
   const [profile] = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, me.id));
   if (!profile) redirect("/onboarding");
-  const { error, info } = await messages(searchParams);
+  const { error } = await messages(searchParams);
   const requested = String((await searchParams).tab ?? "");
   const tab = (TABS as readonly string[]).includes(requested) ? requested : "progress";
   await issuePendingFor(db, me.id);
@@ -68,7 +69,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
 
   return (
     <Page title="Profile" description="Your progress, skills and records. Private unless you share a credential.">
-      <div className="mb-6 grid gap-3"><Alert>{error}</Alert><Alert tone="info">{info}</Alert></div>
+      <div className="mb-6 grid gap-3"><Alert>{error}</Alert></div>
 
       <Card className="mb-6">
         <CardHeader className="flex flex-wrap items-center gap-4">
@@ -155,13 +156,18 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
                     </p>
                   </div>
                 )}
-                <form action={skillAction} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <form action={skillAction} id={`skill-${r.id}`} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                   <input type="hidden" name="skillId" value={r.id} />
                   <SelectField label={r.claim ? "Your level" : "Add your own level"} name="level" defaultValue={r.claim?.level} placeholder="Choose" options={LEVEL_OPTIONS} />
                   <Field label="Where (optional)" name="note" defaultValue={r.claim?.note} placeholder="Course, club, job" />
                   <div className="flex gap-2">
                     <Button name="intent" value="save" size="sm" variant="secondary">{r.claim ? "Update" : "Add"}</Button>
-                    {r.claim && <Button name="intent" value="remove" size="icon-sm" variant="ghost" aria-label={`Remove your self-reported ${r.name}`}><Trash2 /></Button>}
+                    {r.claim && (
+                      <ConfirmSubmit formId={`skill-${r.id}`} name="intent" value="remove" size="icon-sm" variant="ghost" aria-label={`Remove your self-reported ${r.name}`}
+                        ask={{ title: `Remove ${r.name}?`, description: "Only your self-reported level goes. Verified evidence stays.", confirm: "Remove", destructive: true }}>
+                        <Trash2 />
+                      </ConfirmSubmit>
+                    )}
                   </div>
                 </form>
               </CardContent>

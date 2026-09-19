@@ -28,7 +28,7 @@ export default async function EditBrief({ params, searchParams }: PageProps<"/co
   const header = (
     <div className="mb-6 grid gap-3">
       <Alert>{error}</Alert>
-      <Alert tone="info">{info}</Alert>
+      
       {project.state === "changes_requested" && <Alert>Staff asked for changes: {project.reviewNote}</Alert>}
       {editable && (blockers.length ? (
         <Card className="border-amber-500/50 bg-amber-50/60 dark:bg-amber-950/20">
