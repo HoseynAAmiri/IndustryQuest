@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { brief, db, makeOrg, makeSkill, makeUser } from "../../test/db";
+import { brief, db, makeOrg, makeSkill, makeUser, confirmAndSubmit } from "../../test/db";
 import { listProjects, studentTiers } from "./discovery";
 import { reviewProject, saveDraft, submitForReview } from "./projects";
 import { removeSkillClaim, setSkillClaim, updateProfile } from "./profile";
@@ -12,7 +12,7 @@ test("self-reported skills never count as verified evidence or unlock a project"
     mentorId: mentor.id, prerequisites: [{ skillId: "sig", minTier: "emerging" }], skillIds: ["sig"],
     rubric: [{ id: "c1", name: "Sig", description: "", critical: true, threshold: 3, skillId: "sig" }],
   }) });
-  await submitForReview(db, owner, id);
+  await confirmAndSubmit(db, owner, id);
   await reviewProject(db, staff, { projectId: id, approve: true, note: "" });
 
   const ada = await makeUser("ada", { student: true });

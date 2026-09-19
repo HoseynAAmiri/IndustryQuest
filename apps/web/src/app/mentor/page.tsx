@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { ArrowRight, ClipboardCheck, Clock, Inbox, Users } from "lucide-react";
-import { assessments, briefVersions, enrollments, submissions, user } from "@iq/db";
+import { assessments, briefVersions, enrollments, organizations, projects, submissions, user } from "@iq/db";
+import { confirmMentoringAction } from "@/app/company/actions";
 import { Alert, Button, EnrollmentBadge, Page, messages, when } from "@/components/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stat } from "@/app/dashboard";
@@ -36,12 +37,28 @@ export default async function Mentor({ searchParams }: PageProps<"/mentor">) {
     .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
     .innerJoin(user, eq(user.id, enrollments.studentId))
     .where(eq(assessments.assessorId, me.id)).orderBy(desc(assessments.createdAt)).limit(5);
+  const asks = await db.select({ id: projects.id, title: briefVersions.title, org: organizations.name, content: briefVersions.content }).from(projects)
+    .innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId)).innerJoin(organizations, eq(organizations.id, projects.orgId))
+    .where(and(eq(briefVersions.mentorId, me.id), isNull(projects.mentorConfirmedAt)));
   const mentees = mine.filter((m) => m.e.state !== "submitted" && m.e.state !== "completed");
   const overdue = queue.filter((q) => businessDaysSince(q.s.createdAt) > 5).length;
 
   return (
     <Page title="Review queue" description="Submissions waiting for you, and the students you support.">
       <div className="mb-6 grid gap-3"><Alert>{error}</Alert></div>
+      {asks.map((a) => (
+        <Card key={a.id} className="mb-6 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardDescription>{a.org} asked you to mentor</CardDescription>
+            <CardTitle className="text-base">{a.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="flex-1 text-muted-foreground">About {a.content.mentorHours ?? 0} hours per student, {a.content.capacity} {a.content.capacity === 1 ? "place" : "places"}. Confirm only if you can support that.</span>
+            <Button asChild size="sm" variant="ghost"><Link href={`/projects/${a.id}`}>Read the brief</Link></Button>
+            <form action={confirmMentoringAction}><input type="hidden" name="projectId" value={a.id} /><Button size="sm">Confirm I'll mentor</Button></form>
+          </CardContent>
+        </Card>
+      ))}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="Waiting for review" value={queue.length} icon={ClipboardCheck} hint="Target: feedback within 5 business days" />
         <Stat label="Past the target" value={overdue} icon={Clock} hint={overdue ? "Staff get an escalation for these" : "Nothing overdue"} />

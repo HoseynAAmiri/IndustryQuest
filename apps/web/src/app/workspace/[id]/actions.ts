@@ -2,6 +2,7 @@
 import { act } from "@/server/action";
 import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
+import { respondToScopeChange } from "@/server/enrollments";
 import { addLink, postMessage, submit, toggleMilestone } from "@/server/workspace";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "");
@@ -28,4 +29,11 @@ export async function submitAction(f: FormData) {
     enrollmentId: s(f, "enrollmentId"), clientKey: s(f, "clientKey"), fileIds: f.getAll("fileIds").map(String),
     contributionStatement: s(f, "contribution"), reflection: s(f, "reflection"),
   }), { to: at(f, ""), info: "Submitted. Your mentor has been asked to review it within five business days." });
+}
+
+export async function scopeAction(f: FormData) {
+  const u = await requireUser();
+  const accept = f.get("decision") === "accept";
+  await act(at(f, ""), () => respondToScopeChange(getDb(), u, { enrollmentId: s(f, "enrollmentId"), accept }),
+    { info: accept ? "You're now on the new brief version." : "You kept your original agreement. The company has been told." });
 }

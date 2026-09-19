@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { expect, test } from "vitest";
 import { enrollments, projects, xpTransactions } from "@iq/db";
-import { brief, db, makeOrg, makeSkill, makeUser } from "../../test/db";
+import { brief, db, makeOrg, makeSkill, makeUser, confirmAndSubmit } from "../../test/db";
 import { listProjects, toggleSaved } from "./discovery";
 import { reviewProject, saveDraft, submitForReview } from "./projects";
 
 async function publish(orgId: string, owner: { id: string }, staff: { id: string }, b = brief()) {
   const id = await saveDraft(db, owner, { orgId, brief: b });
-  await submitForReview(db, owner, id);
+  await confirmAndSubmit(db, owner, id);
   await reviewProject(db, staff, { projectId: id, approve: true, note: "" });
   return id;
 }

@@ -6,7 +6,7 @@ import { requireUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { UserError } from "@/server/errors";
 import { makeOffer, reject } from "@/server/enrollments";
-import { saveDraft, submitForReview } from "@/server/projects";
+import { confirmMentoring, reviseBrief, saveDraft, setListingState, submitForReview } from "@/server/projects";
 
 const ROWS = 5;
 const s = (f: FormData, k: string) => {
@@ -36,6 +36,10 @@ function parseBrief(f: FormData): Brief {
       critical: f.get(`r${i}.critical`) === "on", threshold: Number(s(f, `r${i}.threshold`)) || 3,
       skillId: s(f, `r${i}.skill`) || undefined,
     })),
+    discipline: s(f, "discipline"), mentorHours: Number(s(f, "mentorHours")) || 0,
+    selectionMethod: s(f, "selectionMethod"), selectionDetails: s(f, "selectionDetails"),
+    expenses: s(f, "expenses"), paymentProcess: s(f, "paymentProcess"), software: s(f, "software"),
+    startingKnowledge: s(f, "startingKnowledge"), portfolioRules: s(f, "portfolioRules"), confidentialNotes: s(f, "confidentialNotes"),
   });
   if (!parsed.success) throw new UserError(`Check the form: ${parsed.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
   return parsed.data;
@@ -64,4 +68,26 @@ export async function rejectAction(form: FormData) {
   const user = await requireUser();
   const back = `/company/projects/${s(form, "projectId")}#applicants`;
   await act(back, () => reject(getDb(), user, { enrollmentId: s(form, "enrollmentId"), note: s(form, "note") }), { info: "Applicant notified. Nothing negative appears on their profile." });
+}
+
+export async function reviseAction(form: FormData) {
+  const user = await requireUser();
+  const projectId = s(form, "projectId");
+  await act(`/company/projects/${projectId}?edit=1`, async () => {
+    await reviseBrief(getDb(), user, { projectId, brief: parseBrief(form), reason: s(form, "reason"), material: form.get("material") === "on" });
+  }, { to: `/company/projects/${projectId}`, info: form.get("material") === "on"
+    ? "New version published. Enrolled students were asked to agree to the change." : "New version published for new applicants." });
+}
+
+export async function listingAction(form: FormData) {
+  const user = await requireUser();
+  const projectId = s(form, "projectId");
+  const action = s(form, "action") as "pause" | "resume" | "close";
+  await act(`/company/projects/${projectId}`, () => setListingState(getDb(), user, { projectId, action, reason: s(form, "reason") }),
+    { info: { pause: "Applications paused. Applicants were told why.", resume: "Applications reopened.", close: "Listing closed. Current students carry on." }[action] });
+}
+
+export async function confirmMentoringAction(form: FormData) {
+  const user = await requireUser();
+  await act("/mentor", () => confirmMentoring(getDb(), user, s(form, "projectId")), { info: "Thanks. The company can now submit the brief." });
 }

@@ -30,6 +30,7 @@ export const skillNames = async (db: Db) => Object.fromEntries((await db.select(
 export type Filters = {
   q?: string; skill?: string; tier?: string; beginner?: boolean; compensation?: string;
   maxHours?: number; openOnly?: boolean; includeInactive?: boolean; saved?: boolean;
+  discipline?: string; orgId?: string; closingWithinDays?: number;
 };
 
 // Listing states a visitor may see. Paused and closed stay visible on request (DIS-07) but never by default.
@@ -50,6 +51,9 @@ export async function listProjects(db: Db, viewer: Actor | null, f: Filters) {
     f.beginner ? eq(briefVersions.beginner, true) : undefined,
     f.compensation ? sql`${content}->>'compensation' = ${f.compensation}` : undefined,
     f.maxHours ? sql`(${content}->>'effortHours')::int <= ${f.maxHours}` : undefined,
+    f.discipline ? sql`${content}->>'discipline' = ${f.discipline}` : undefined,
+    f.orgId ? eq(projects.orgId, f.orgId) : undefined,
+    f.closingWithinDays ? sql`${content}->>'applyDeadline' <= ${new Date(Date.now() + f.closingWithinDays * 864e5).toISOString().slice(0, 10)}` : undefined,
     f.saved && viewer ? sql`exists (select 1 from ${savedProjects} where ${savedProjects.projectId} = ${projects.id} and ${savedProjects.userId} = ${viewer.id})` : undefined,
   ];
   const rows = await db
@@ -101,4 +105,15 @@ export async function toggleSaved(db: Db, actor: Actor, projectId: string) {
     .where(and(eq(savedProjects.userId, actor.id), eq(savedProjects.projectId, projectId))).returning();
   if (!deleted.length) await db.insert(savedProjects).values({ userId: actor.id, projectId });
   return !deleted.length;
+}
+
+// Options for the discipline and company filters: only values that appear on visible listings.
+export async function filterOptions(db: Db) {
+  const rows = await db.selectDistinct({ discipline: sql<string>`${briefVersions.content}->>'discipline'`, orgId: organizations.id, org: organizations.name })
+    .from(projects).innerJoin(briefVersions, eq(briefVersions.id, projects.currentVersionId)).innerJoin(organizations, eq(organizations.id, projects.orgId))
+    .where(inArray(projects.state, [...VISIBLE]));
+  return {
+    disciplines: [...new Set(rows.map((r) => r.discipline).filter(Boolean))].sort(),
+    orgs: [...new Map(rows.map((r) => [r.orgId, r.org])).entries()].map(([value, label]) => ({ value, label })),
+  };
 }

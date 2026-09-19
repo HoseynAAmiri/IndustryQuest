@@ -3,7 +3,8 @@ import type { Brief } from "@iq/core";
 import { Button, CheckField, Field, NONE, SelectField, TextArea } from "@/components/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { saveBrief } from "./actions";
+import { reviseAction, saveBrief } from "./actions";
+import { SELECTION } from "@iq/core";
 
 type Opt = { id: string; name: string };
 const ROWS = [0, 1, 2, 3, 4];
@@ -22,12 +23,12 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-export function BriefForm({ orgId, projectId, b, mentors, skills }: {
-  orgId: string; projectId?: string; b?: Brief; mentors: Opt[]; skills: Opt[];
+export function BriefForm({ orgId, projectId, b, mentors, skills, revise }: {
+  orgId: string; projectId?: string; b?: Brief; mentors: Opt[]; skills: Opt[]; revise?: boolean;
 }) {
   const skillOpts = [{ value: NONE, label: "None" }, ...skills.map((s) => ({ value: s.id, label: s.name }))];
   return (
-    <form action={saveBrief} className="grid gap-6">
+    <form action={revise ? reviseAction : saveBrief} className="grid gap-6">
       <input type="hidden" name="orgId" value={orgId} />
       {projectId && <input type="hidden" name="projectId" value={projectId} />}
 
@@ -42,7 +43,19 @@ export function BriefForm({ orgId, projectId, b, mentors, skills }: {
           <Field label="Effort (hours)" name="effortHours" type="number" min={1} max={200} defaultValue={b?.effortHours ?? 4} />
           <Field label="Places" name="capacity" type="number" min={1} max={50} defaultValue={b?.capacity ?? 1} />
         </div>
-        <CheckField label="Open to students with no verified work yet" name="beginner" defaultChecked={b?.beginner ?? true} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Discipline" name="discipline" defaultValue={b?.discipline} placeholder="Data analysis" />
+          <div className="self-end pb-2"><CheckField label="Open to students with no verified work yet" name="beginner" defaultChecked={b?.beginner ?? true} /></div>
+        </div>
+      </Section>
+
+      <Section title="Selection" description="Published before applications open, so students know how they'll be chosen.">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <SelectField label="How you'll choose" name="selectionMethod" defaultValue={b?.selectionMethod || NONE}
+            options={[{ value: NONE, label: "Not decided" }, ...Object.entries(SELECTION).map(([value, label]) => ({ value, label }))]} />
+          <Field label="Selection details (optional)" name="selectionDetails" defaultValue={b?.selectionDetails} />
+        </div>
+        <TextArea label="Starting knowledge expected" name="startingKnowledge" defaultValue={b?.startingKnowledge} rows={2} hint="What a student should already know. Not a hard prerequisite." />
       </Section>
 
       <Section title="Mentoring and schedule">
@@ -51,6 +64,8 @@ export function BriefForm({ orgId, projectId, b, mentors, skills }: {
             options={[{ value: NONE, label: "No mentor yet" }, ...mentors.map((m) => ({ value: m.id, label: m.name }))]} />
           <Field label="Backup escalation contact" name="backupContact" defaultValue={b?.backupContact} hint="Name and email of someone who can step in." />
         </div>
+        <Field label="Mentor time per student (hours)" name="mentorHours" type="number" min={0} max={100} defaultValue={b?.mentorHours ?? 3}
+          hint="Checkpoints and reviews. The mentor confirms this before publication." className="sm:max-w-56" />
         <Field label="Application deadline (UTC)" name="applyDeadline" type="date" defaultValue={b?.applyDeadline} className="sm:max-w-56" />
         <fieldset className="grid gap-2">
           <legend className="mb-1 text-sm font-medium">Milestones</legend>
@@ -67,7 +82,10 @@ export function BriefForm({ orgId, projectId, b, mentors, skills }: {
 
       <Section title="Work and terms">
         <TextArea label="Deliverables" name="deliverables" defaultValue={b?.deliverables.join("\n")} hint="One per line." />
-        <TextArea label="Resources" name="resources" defaultValue={b?.resources} hint="Data, software, starter material, access instructions." />
+        <TextArea label="Resources" name="resources" defaultValue={b?.resources} hint="Data and starter material. Shown only to enrolled students." />
+        <TextArea label="Software and equipment" name="software" defaultValue={b?.software} rows={2} />
+        <TextArea label="Confidential details (optional)" name="confidentialNotes" defaultValue={b?.confidentialNotes} rows={2}
+          hint="Site names, internal context. Only enrolled students see this, never the public listing." />
         <div className="grid gap-5 sm:grid-cols-2">
           <SelectField label="Compensation" name="compensation" defaultValue={b?.compensation || NONE} options={[
             { value: NONE, label: "Not decided" }, { value: "paid", label: "Paid" }, { value: "stipend", label: "Stipend" },
@@ -75,6 +93,11 @@ export function BriefForm({ orgId, projectId, b, mentors, skills }: {
           ]} />
           <Field label="Amount and conditions" name="compensationDetails" defaultValue={b?.compensationDetails} />
         </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Who pays, and how" name="paymentProcess" defaultValue={b?.paymentProcess} hint="Required for paid or stipend projects. Payment happens outside IndustryQuest." />
+          <Field label="Expenses" name="expenses" defaultValue={b?.expenses} placeholder="None expected" />
+        </div>
+        <TextArea label="Portfolio rules" name="portfolioRules" defaultValue={b?.portfolioRules} rows={2} hint="What students may show publicly after completion." />
         <TextArea label="Terms" name="terms" defaultValue={b?.terms} hint="Participation, confidentiality, who owns the work, what may go in a portfolio." />
       </Section>
 
@@ -112,10 +135,18 @@ export function BriefForm({ orgId, projectId, b, mentors, skills }: {
         </fieldset>
       </Section>
 
-      <div className="sticky bottom-0 -mx-4 flex flex-wrap gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
-        <Button type="submit" name="intent" value="save" variant="outline">Save draft</Button>
-        <Button type="submit" name="intent" value="submit">Save and submit for review</Button>
-      </div>
+      {revise ? (
+        <Section title="Publish as a new version" description="The current version stays on record. New applicants see the new one.">
+          <TextArea label="What changed and why" name="reason" rows={3} required minLength={10} hint="Enrolled students read this before deciding." />
+          <CheckField name="material" label="This changes what enrolled students agreed to (they must accept it)" defaultChecked />
+          <Button type="submit" className="justify-self-start">Publish new version</Button>
+        </Section>
+      ) : (
+        <div className="sticky bottom-0 -mx-4 flex flex-wrap gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
+          <Button type="submit" name="intent" value="save" variant="outline">Save draft</Button>
+          <Button type="submit" name="intent" value="submit">Save and submit for review</Button>
+        </div>
+      )}
     </form>
   );
 }

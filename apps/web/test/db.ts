@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeEach } from "vitest";
 import { briefSchema, type Brief } from "@iq/core";
 import { connect, memberships, organizations, skills, studentProfiles, user } from "@iq/db";
+import { confirmMentoring, loadProject, submitForReview } from "../src/server/projects";
 
 // Shared by integration tests: a clean database before each test, plus small fixtures.
 export const db = connect(process.env.DATABASE_URL!);
@@ -36,7 +37,14 @@ export const brief = (b: Partial<Brief> = {}): Brief =>
     tier: "Q1", beginner: true, effortHours: 4, capacity: 1, mentorId: "", backupContact: "ops@test.local",
     compensation: "unpaid", compensationDetails: "", applyDeadline: "2099-01-01", deliverables: ["Notebook"],
     milestones: [{ title: "Final", dueInDays: 7 }], resources: "", terms: "Portfolio summary allowed.",
-    skillIds: [], prerequisites: [],
+    skillIds: [], prerequisites: [], mentorHours: 2, selectionMethod: "rubric",
     rubric: [{ id: "c1", name: "Analysis", description: "", critical: true, threshold: 3 }],
     ...b,
   });
+
+// The named mentor confirms (MEN-02), then the owner submits for review.
+export async function confirmAndSubmit(_db: typeof db, owner: { id: string }, projectId: string) {
+  const { brief } = await loadProject(db, projectId);
+  if (brief.mentorId) await confirmMentoring(db, { id: brief.mentorId }, projectId);
+  await submitForReview(db, owner, projectId);
+}

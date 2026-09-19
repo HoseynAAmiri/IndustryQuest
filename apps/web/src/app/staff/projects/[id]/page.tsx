@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { canPublish } from "@iq/core";
+import { briefSchema, canPublish } from "@iq/core";
 import { eq } from "drizzle-orm";
 import { skills, user } from "@iq/db";
 import { BriefView } from "@/components/brief-view";
@@ -29,7 +29,7 @@ export default async function StaffReview({ params, searchParams }: PageProps<"/
   const { project, brief, org } = await loadProject(db, (await params).id);
   const [mentor] = brief.mentorId ? await db.select({ name: user.name }).from(user).where(eq(user.id, brief.mentorId)) : [];
   const names = Object.fromEntries((await db.select().from(skills)).map((s) => [s.id, s.name]));
-  const blockers = canPublish(brief.content, { verified: !!org.verifiedAt });
+  const blockers = canPublish(briefSchema.parse(brief.content), { verified: !!org.verifiedAt, mentorConfirmed: !!project.mentorConfirmedAt });
   return (
     <Page title={brief.title} description={`Review for ${org.name}`} back={{ href: "/staff", label: "Staff queue" }} actions={<ListingBadge state={project.state} />}>
       <div className="mb-6 grid gap-3">

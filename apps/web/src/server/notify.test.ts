@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { expect, test } from "vitest";
 import { events, notifications } from "@iq/db";
-import { brief, db, makeOrg, makeUser } from "../../test/db";
+import { brief, db, makeOrg, makeUser, confirmAndSubmit } from "../../test/db";
 import { apply, makeOffer } from "./enrollments";
 import { notify } from "./notify";
 import { reviewProject, saveDraft, submitForReview } from "./projects";
@@ -17,7 +17,7 @@ test("applying tells the owner, an offer tells the student, analytics keep ids o
   const owner = await makeUser("owner"); const mentor = await makeUser("mentor"); const staff = await makeUser("staff", { isStaff: true });
   const org = await makeOrg({ owner: owner.id, mentors: [mentor.id] });
   const projectId = await saveDraft(db, owner, { orgId: org.id, brief: brief({ mentorId: mentor.id }) });
-  await submitForReview(db, owner, projectId);
+  await confirmAndSubmit(db, owner, projectId);
   await reviewProject(db, staff, { projectId, approve: true, note: "" });
   const ada = await makeUser("ada", { student: true });
   const motivation = "I want to learn vibration analysis on real data.";

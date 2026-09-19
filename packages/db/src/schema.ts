@@ -125,6 +125,8 @@ export const projects = pgTable("projects", {
   state: listingState("state").notNull().default("draft"),
   currentVersionId: uuid("current_version_id"),
   reviewNote: text("review_note"),
+  mentorConfirmedAt: timestamp("mentor_confirmed_at", { withTimezone: true }), // MEN-02: the named mentor agreed
+  stateReason: text("state_reason"), // why it was paused or closed (PRJ-11)
   createdAt: created(),
   updatedAt: updated(),
 });
@@ -177,6 +179,9 @@ export const enrollments = pgTable(
     motivation: text("motivation").notNull(),
     availability: text("availability").notNull().default(""),
     decisionNote: text("decision_note"),
+    // PRJ-10/15, AC-06: a newer brief version waiting for this student's consent.
+    proposedVersionId: uuid("proposed_version_id").references(() => briefVersions.id),
+    proposalReason: text("proposal_reason"),
     // ponytail: offer row + expiry is the seat reservation; separate reservation table if waitlists (R1) need it
     offerExpiresAt: timestamp("offer_expires_at", { withTimezone: true }),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),

@@ -28,7 +28,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
   const { project, brief, org } = row;
   const session = await getSession();
   const roles = session ? await getRoles(db, session.user.id) : null;
-  const insider = !!roles && (roles.isStaff || roles.ownerOf.includes(project.orgId));
+  const insider = !!roles && (roles.isStaff || roles.ownerOf.includes(project.orgId) || brief.mentorId === session!.user.id);
   // Drafts and briefs in review are private to the company and staff (ACC-08 covers public briefs only).
   if (!["published", "paused", "closed"].includes(project.state) && !insider) notFound();
 

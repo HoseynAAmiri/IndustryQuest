@@ -7,7 +7,7 @@ import { ProjectCard } from "@/components/project-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/server/auth";
 import { getDb } from "@/server/db";
-import { listProjects, type Filters } from "@/server/discovery";
+import { filterOptions, listProjects, type Filters } from "@/server/discovery";
 import { coordinatorEmail } from "@/server/demo";
 
 export const metadata: Metadata = { title: "Explore projects" };
@@ -20,10 +20,12 @@ export default async function Explore({ searchParams }: PageProps<"/explore">) {
   const f: Filters = {
     q: one(sp.q), skill: one(sp.skill), tier: one(sp.tier), compensation: one(sp.compensation),
     maxHours: Number(one(sp.maxHours)) || undefined,
+    discipline: one(sp.discipline), orgId: one(sp.org), closingWithinDays: Number(one(sp.closing)) || undefined,
     beginner: sp.beginner === "on", openOnly: sp.open === "on", includeInactive: sp.inactive === "on", saved: sp.saved === "on",
   };
   const session = await getSession();
   const { cards, names, tiers, isStudent } = await listProjects(getDb(), session?.user ?? null, f);
+  const opts = await filterOptions(getDb());
   const filtered = Object.values(f).some(Boolean);
   const here = `/explore?${new URLSearchParams(Object.entries(sp).filter(([, v]) => typeof v === "string") as [string, string][])}`;
 
@@ -32,6 +34,9 @@ export default async function Explore({ searchParams }: PageProps<"/explore">) {
               <Field label="Search" name="q" type="search" defaultValue={f.q} placeholder="Title, company, problem" />
               <SelectField label="Skill" name="skill" defaultValue={f.skill ?? NONE}
                 options={[{ value: NONE, label: "Any skill" }, ...Object.entries(names).map(([value, label]) => ({ value, label }))]} />
+              <SelectField label="Discipline" name="discipline" defaultValue={f.discipline ?? NONE}
+                options={[{ value: NONE, label: "Any discipline" }, ...opts.disciplines.map((d) => ({ value: d, label: d }))]} />
+              <SelectField label="Company" name="org" defaultValue={f.orgId ?? NONE} options={[{ value: NONE, label: "Any company" }, ...opts.orgs]} />
               <SelectField label="Tier" name="tier" defaultValue={f.tier ?? NONE} options={[
                 { value: NONE, label: "Any tier" }, { value: "Q1", label: "Q1 Starter" }, { value: "Q2", label: "Q2 Foundation" },
               ]} />
@@ -41,6 +46,9 @@ export default async function Explore({ searchParams }: PageProps<"/explore">) {
               ]} />
               <SelectField label="Effort" name="maxHours" defaultValue={f.maxHours ?? NONE} options={[
                 { value: NONE, label: "Any effort" }, { value: "6", label: "Up to 6 hours" }, { value: "15", label: "Up to 15 hours" },
+              ]} />
+              <SelectField label="Deadline" name="closing" defaultValue={f.closingWithinDays ?? NONE} options={[
+                { value: NONE, label: "Any deadline" }, { value: "7", label: "Closing within a week" }, { value: "30", label: "Closing within a month" },
               ]} />
               <div className="grid gap-2.5">
                 <CheckField label="Beginner friendly" name="beginner" defaultChecked={f.beginner} />

@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { expect, test, vi } from "vitest";
 import { levelFromXp, type Score } from "@iq/core";
 import { credentials, enrollments, milestones, skillEvidence, submissions, xpTransactions } from "@iq/db";
-import { brief, db, makeOrg, makeSkill, makeUser } from "../../test/db";
+import { brief, db, makeOrg, makeSkill, makeUser, confirmAndSubmit } from "../../test/db";
 import { apply, expireStaleOffers, makeOffer, reject, respondToOffer } from "./enrollments";
 import { reviewProject, saveDraft, submitForReview } from "./projects";
 import { assess } from "./review";
@@ -20,7 +20,7 @@ async function world(capacity = 2) {
   const org = await makeOrg({ owner: owner.id, mentors: [mentor.id] });
   await makeSkill("sig");
   const projectId = await saveDraft(db, owner, { orgId: org.id, brief: brief({ mentorId: mentor.id, capacity, skillIds: ["sig"], rubric }) });
-  await submitForReview(db, owner, projectId);
+  await confirmAndSubmit(db, owner, projectId);
   await reviewProject(db, staff, { projectId, approve: true, note: "" });
   const student = async (id: string) => {
     const s = await makeUser(id, { student: true });

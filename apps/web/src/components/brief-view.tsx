@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Building2, CalendarClock, Clock, Coins, GraduationCap, UserRound } from "lucide-react";
-import type { Brief } from "@iq/core";
+import { SELECTION, briefSchema, type Brief } from "@iq/core";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,6 +13,7 @@ const TIER = (b: Brief) => (b.tier === "Q1" ? "Q1 Starter" : "Q2 Foundation");
 export function BriefView({ b, mentorName, orgName, skillNames, restricted = false }: {
   b: Brief; mentorName?: string | null; orgName: string; skillNames: Record<string, string>; restricted?: boolean;
 }) {
+  b = briefSchema.parse(b); // fills fields added after older briefs were saved
   const skill = (id?: string) => (id ? skillNames[id] ?? id : null);
   return (
     <div className="grid gap-6">
@@ -25,6 +26,15 @@ export function BriefView({ b, mentorName, orgName, skillNames, restricted = fal
             <Fact icon={Clock} label="Effort">About {b.effortHours} hours</Fact>
             <Fact icon={Coins} label="Compensation">{COMP[b.compensation]}{b.compensationDetails && `: ${b.compensationDetails}`}</Fact>
             <Fact icon={CalendarClock} label="Apply by">{b.applyDeadline ? `${b.applyDeadline} (UTC)` : "Not set"}</Fact>
+          </dl>
+          <dl className="mt-5 grid gap-x-6 gap-y-3 border-t pt-4 text-sm sm:grid-cols-2">
+            {b.discipline && <Row label="Discipline">{b.discipline}</Row>}
+            {b.selectionMethod && <Row label="How applicants are chosen">{SELECTION[b.selectionMethod]}{b.selectionDetails && `. ${b.selectionDetails}`}</Row>}
+            {b.mentorHours > 0 && <Row label="Mentor time">About {b.mentorHours} hours with you, replies within two business days</Row>}
+            {b.expenses && <Row label="Expenses">{b.expenses}</Row>}
+            {b.paymentProcess && <Row label="Payment">{b.paymentProcess}</Row>}
+            {b.startingKnowledge && <Row label="Helpful to know already">{b.startingKnowledge}</Row>}
+            {b.software && <Row label="Software and equipment">{b.software}</Row>}
           </dl>
           {b.skillIds.length > 0 && (
             <div className="mt-5 flex flex-wrap items-center gap-2 border-t pt-4">
@@ -91,7 +101,13 @@ export function BriefView({ b, mentorName, orgName, skillNames, restricted = fal
               : <p className="whitespace-pre-line">{b.resources}</p>}
           </Section>
         )}
-        <Section title="Terms"><p className="whitespace-pre-line">{b.terms}</p></Section>
+        <Section title="Terms">
+          <p className="whitespace-pre-line">{b.terms}</p>
+          {b.portfolioRules && <p className="mt-3 text-sm"><span className="font-medium">Portfolio: </span>{b.portfolioRules}</p>}
+        </Section>
+        {!restricted && b.confidentialNotes && (
+          <Section title="Confidential details"><p className="whitespace-pre-line">{b.confidentialNotes}</p><p className="mt-2 text-xs text-muted-foreground">Visible to enrolled students only.</p></Section>
+        )}
       </div>
       <p className="text-sm text-muted-foreground">Backup contact if your mentor is unavailable: {b.backupContact}</p>
     </div>
@@ -105,6 +121,10 @@ function Fact({ icon: Icon, label, children }: { icon: typeof Clock; label: stri
       <div><dt className="text-sm text-muted-foreground">{label}</dt><dd className="font-medium">{children}</dd></div>
     </div>
   );
+}
+
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return <div><dt className="text-muted-foreground">{label}</dt><dd>{children}</dd></div>;
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {

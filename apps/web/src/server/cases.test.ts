@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { expect, test } from "vitest";
 import { cases, enrollments, milestones, xpTransactions } from "@iq/db";
-import { brief, db, makeOrg, makeUser } from "../../test/db";
+import { brief, db, makeOrg, makeUser, confirmAndSubmit } from "../../test/db";
 import { addCaseUpdate, openCase, resolveCase } from "./cases";
 import { apply, makeOffer, respondToOffer } from "./enrollments";
 import { reviewProject, saveDraft, submitForReview } from "./projects";
@@ -15,7 +15,7 @@ async function active() {
   const staff = await makeUser("staff", { isStaff: true });
   const org = await makeOrg({ owner: owner.id, mentors: [mentor.id] });
   const projectId = await saveDraft(db, owner, { orgId: org.id, brief: brief({ mentorId: mentor.id, rubric, milestones: [{ title: "Draft", dueInDays: 7 }] }) });
-  await submitForReview(db, owner, projectId);
+  await confirmAndSubmit(db, owner, projectId);
   await reviewProject(db, staff, { projectId, approve: true, note: "" });
   const ada = await makeUser("ada", { student: true });
   const e = await apply(db, ada, { projectId, motivation: "I want to learn vibration analysis.", availability: "" });

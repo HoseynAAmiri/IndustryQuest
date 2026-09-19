@@ -7,6 +7,8 @@ import { apply, expireStaleOffers, makeOffer, reject, respondToOffer, withdraw }
 import { assess } from "../src/server/review";
 import { addLink, postMessage, submit, toggleMilestone } from "../src/server/workspace";
 import { setCredentialPublic } from "../src/server/credentials";
+import { reviseBrief } from "../src/server/projects";
+import { briefSchema } from "@iq/core";
 import { addCaseUpdate, openCase, resolveCase } from "../src/server/cases";
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed a production database.");
@@ -175,6 +177,14 @@ await db.insert(savedProjects).values([{ userId: ada.id, projectId: P.forecast }
   await assess(db, mina, { submissionId: s, scores: scores(1, 1), decision: "not_complete", comment: "The findings don't reference the accessibility brief and no fixes are proposed. The project ended before a revision could be arranged; talk to staff if you'd like to appeal or retry." });
   await back(e, 6); // Closed, not completed
 }
+// ── Scope change waiting for Ada's consent (AC-06) ──
+{
+  const [row] = (await db.execute<{ content: unknown }>(sql`select v.content from projects p join brief_versions v on v.id = p.current_version_id where p.id = ${P.retail}`)).rows;
+  const b = briefSchema.parse(row.content);
+  await reviseBrief(db, kofi, { projectId: P.retail, material: true, reason: "Our buyers asked for a per-region view, so the brief now includes a short region breakdown table.",
+    brief: { ...b, deliverables: [...b.deliverables, "Region breakdown table"], effortHours: b.effortHours + 1 } });
+}
+
 // ── Cases: one of each kind, open and resolved ──
 const enrollmentOf = async (student: string, project: string) =>
   (await db.execute<{ id: string }>(sql`select id from enrollments where student_id = ${student} and project_id = ${project} order by created_at desc limit 1`)).rows[0].id;

@@ -5,7 +5,9 @@ import { eq } from "drizzle-orm";
 import {
   CalendarClock, CheckCircle2, Circle, ClipboardCheck, Download, ExternalLink, FileText, LifeBuoy, Link2, MessageSquare, PartyPopper, Send, Upload,
 } from "lucide-react";
-import { skills, studentProfiles } from "@iq/db";
+import { briefVersions, skills, studentProfiles } from "@iq/db";
+import { briefDiff, briefSchema } from "@iq/core";
+import { ConfirmSubmit } from "@/components/confirm";
 import { BriefView } from "@/components/brief-view";
 import { Alert, Button, CheckField, EnrollmentBadge, Field, Page, SelectField, TextArea, messages, when } from "@/components/ui";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -19,7 +21,7 @@ import { getDb } from "@/server/db";
 import { issueRewards } from "@/server/rewards";
 import { loadWorkspace } from "@/server/workspace";
 import { openCaseAction } from "@/app/support/actions";
-import { linkAction, messageAction, milestoneAction, submitAction } from "./actions";
+import { linkAction, messageAction, milestoneAction, scopeAction, submitAction } from "./actions";
 
 export const metadata: Metadata = { title: "Workspace" };
 
@@ -46,6 +48,8 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
   const canSubmit = isStudent && (w.e.state === "active" || w.e.state === "revision_requested");
   const lastReview = w.submissions.find((s) => s.a)?.a;
   const done = w.milestones.filter((m) => m.doneAt).length;
+  const [proposed] = w.e.proposedVersionId ? await db.select().from(briefVersions).where(eq(briefVersions.id, w.e.proposedVersionId)) : [];
+  const changes = proposed ? briefDiff(briefSchema.parse(w.v.content), briefSchema.parse(proposed.content)) : [];
   const decided = w.e.state === "closed_incomplete" || w.e.state === "completed";
   const fileName = Object.fromEntries(w.files.map(({ f }) => [f.id, f.name]));
 
@@ -64,6 +68,32 @@ export default async function Workspace({ params, searchParams }: PageProps<"/wo
       <div className="mb-6 grid gap-3">
         <Alert>{error}</Alert>
         
+        {proposed && (
+          <Card className="border-primary/50 bg-primary/5">
+            <form action={scopeAction} id="scope">
+              <CardHeader>
+                <CardTitle className="text-base">{w.org.name} proposes a change to the brief (version {proposed.version})</CardTitle>
+                <CardDescription>{w.e.proposalReason}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 pt-4 text-sm">
+                <input type="hidden" name="enrollmentId" value={id} />
+                <p><span className="font-medium">What changes:</span> {changes.join(", ") || "wording only"}.</p>
+                <p className="text-muted-foreground">
+                  You agreed to version {w.v.version}. Nothing changes unless you accept. If you decline, you keep the original scope, rubric and reward.
+                </p>
+                {isStudent ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button name="decision" value="accept" size="sm">Accept the new version</Button>
+                    <ConfirmSubmit formId="scope" name="decision" value="decline" size="sm" variant="outline"
+                      ask={{ title: "Keep your original agreement?", description: "The company is told you declined. If the project can't continue as agreed, program staff help find a fair outcome.", confirm: "Keep original" }}>
+                      Keep my original agreement
+                    </ConfirmSubmit>
+                  </div>
+                ) : <p className="font-medium">Waiting for the student to decide.</p>}
+              </CardContent>
+            </form>
+          </Card>
+        )}
         {w.e.state === "revision_requested" && lastReview && (
           <Card className="border-amber-500/50 bg-amber-50/60 dark:bg-amber-950/20">
             <CardHeader>

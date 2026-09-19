@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import {
-  canPublish, checkEligibility, evaluate, explainFit, inQuietHours, shouldEmail, levelFromXp, nextEnrollment, nextListing, progress,
+  briefDiff, briefSchema, canPublish, checkEligibility, evaluate, explainFit, inQuietHours, shouldEmail, levelFromXp, nextEnrollment, nextListing, progress,
   skillScores, tierFor, xpForLevel, type Brief, type Criterion,
 } from "./index.ts";
 
@@ -65,6 +65,8 @@ test("publishing is blocked without mentor, rubric or compensation (AC-02)", () 
     beginner: true, effortHours: 4, capacity: 2, mentorId: "", backupContact: "ops@example.com", compensation: "",
     compensationDetails: "", applyDeadline: "2099-01-01", deliverables: ["Notebook"], milestones: [{ title: "Draft", dueInDays: 7 }],
     resources: "", terms: "Portfolio summary allowed.", skillIds: [], prerequisites: [], rubric: [],
+    discipline: "", mentorHours: 2, selectionMethod: "rubric", selectionDetails: "", expenses: "", paymentProcess: "",
+    software: "", startingKnowledge: "", portfolioRules: "", confidentialNotes: "",
   };
   const errors = canPublish(empty, { verified: true });
   expect(errors).toEqual([
@@ -73,6 +75,17 @@ test("publishing is blocked without mentor, rubric or compensation (AC-02)", () 
     "Publish an assessment rubric.",
   ]);
   expect(canPublish({ ...empty, mentorId: "m1", compensation: "unpaid", rubric }, { verified: true })).toEqual([]);
+  expect(canPublish({ ...empty, mentorId: "m1", compensation: "unpaid", rubric }, { verified: true, mentorConfirmed: false }))
+    .toEqual(["Wait for the mentor to confirm they'll support this project."]);
+  expect(canPublish({ ...empty, mentorId: "m1", compensation: "paid", compensationDetails: "€300", rubric, selectionMethod: "" }, { verified: true }))
+    .toEqual(["Say who pays and through which process.", "Say how you'll choose between applicants."]);
+});
+
+test("a brief diff names what changed, for student consent", () => {
+  const a = briefSchema.parse({ title: "T", summary: "", problem: "", tier: "Q1", beginner: true, effortHours: 4, capacity: 1, mentorId: "m",
+    backupContact: "", compensation: "unpaid", compensationDetails: "", applyDeadline: "", deliverables: ["Notebook"], milestones: [],
+    resources: "", terms: "", skillIds: [], prerequisites: [], rubric: [] });
+  expect(briefDiff(a, { ...a, deliverables: ["Notebook", "Memo"], effortHours: 6, summary: "new" })).toEqual(["Deliverables", "Effort"]);
 });
 
 test("fit explains itself in words and puts ineligible projects last", () => {

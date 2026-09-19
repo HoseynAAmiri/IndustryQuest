@@ -4,7 +4,7 @@ import { briefVersions, enrollments, milestones, projects, studentProfiles, type
 import { assertOrgRole, type Actor } from "./authz";
 import { seatsTaken, studentTiers } from "./discovery";
 import { Forbidden, UserError } from "./errors";
-import { notify, notifyAll, ownersOf, track } from "./notify";
+import { audit, notify, notifyAll, ownersOf, track } from "./notify";
 
 const OFFER_DAYS = 5;
 const ACTIVE_LIMIT = 2; // ENR-07: concurrent projects per student
@@ -123,5 +123,21 @@ export async function respondToOffer(db: Db, actor: Actor, input: { enrollmentId
   await notifyAll(db, [...await ownersOf(db, p.orgId), ...(v.mentorId ? [v.mentorId] : [])], {
     kind: "enrollment", essential: true, title: `Enrollment confirmed: ${v.title}`,
     body: "The student accepted the offer and the agreed brief version. Milestone dates start today.", href: `/workspace/${e.id}`, key: `accept:${e.id}`,
+  });
+}
+
+// AC-06: the student decides. Accepting moves them to the new version; declining keeps the old agreement.
+export async function respondToScopeChange(db: Db, actor: Actor, input: { enrollmentId: string; accept: boolean }) {
+  const { e, p, v } = await load(db, input.enrollmentId);
+  if (e.studentId !== actor.id) throw new Forbidden();
+  if (!e.proposedVersionId) throw new UserError("There's no pending change.");
+  await db.update(enrollments).set({
+    ...(input.accept && { briefVersionId: e.proposedVersionId }), proposedVersionId: null, proposalReason: null, updatedAt: new Date(),
+  }).where(eq(enrollments.id, e.id));
+  await audit(db, actor.id, input.accept ? "scope_change_accepted" : "scope_change_declined", "enrollment", e.id, undefined, { from: e.briefVersionId, to: e.proposedVersionId });
+  await notifyAll(db, await ownersOf(db, p.orgId), {
+    kind: "scope", essential: true, title: `${input.accept ? "Change accepted" : "Change declined"}: ${v.title}`,
+    body: input.accept ? "The student moved to the new brief version." : "The student keeps the original agreement. Talk to staff if the project can't continue as agreed.",
+    href: `/workspace/${e.id}`, key: `scope-reply:${e.id}:${e.proposedVersionId}`,
   });
 }
