@@ -5,6 +5,7 @@ import {
 } from "@iq/db";
 import { getRoles, type Actor } from "./authz";
 import { Forbidden, UserError } from "./errors";
+import { audit, notify, track } from "./notify";
 
 export type Access = "student" | "mentor" | "owner" | "staff";
 
@@ -18,8 +19,11 @@ export async function enrollmentAccess(db: Db, actor: Actor, enrollmentId: strin
   if (row.e.mentorId === actor.id) return "mentor";
   const roles = await getRoles(db, actor.id);
   if (roles.ownerOf.includes(row.orgId)) return "owner";
-  // ponytail: staff access is not logged yet; add an audit_events row here before real participant data (OPS-07).
-  if (roles.isStaff) return "staff";
+  if (roles.isStaff) {
+    // Staff access is purpose-bound and always logged (§16.1, OPS-07).
+    await audit(db, actor.id, "staff_accessed_enrollment", "enrollment", enrollmentId);
+    return "staff";
+  }
   throw new Forbidden();
 }
 
@@ -53,7 +57,10 @@ export async function postMessage(db: Db, actor: Actor, input: { enrollmentId: s
   await enrollmentAccess(db, actor, input.enrollmentId);
   const body = input.body.trim();
   if (!body) throw new UserError("Write a message first.");
-  await db.insert(messages).values({ enrollmentId: input.enrollmentId, authorId: actor.id, body: body.slice(0, 4000) });
+  const [m] = await db.insert(messages).values({ enrollmentId: input.enrollmentId, authorId: actor.id, body: body.slice(0, 4000) }).returning();
+  const [e] = await db.select().from(enrollments).where(eq(enrollments.id, input.enrollmentId));
+  const to = e.studentId === actor.id ? e.mentorId : e.studentId;
+  if (to) await notify(db, { userId: to, kind: "message", title: "New message on your project", href: `/workspace/${e.id}?tab=discussion`, key: `msg:${e.id}:${m.id}` });
 }
 
 export async function toggleMilestone(db: Db, actor: Actor, milestoneId: string) {
@@ -97,6 +104,11 @@ export async function submit(db: Db, actor: Actor, input: {
       contributionStatement: input.contributionStatement.trim().slice(0, 4000), reflection: input.reflection.trim().slice(0, 4000),
     }).returning();
     await tx.update(enrollments).set({ state: nextEnrollment(e.state, "submit"), updatedAt: new Date() }).where(eq(enrollments.id, e.id));
+    return { s, e };
+  }).then(async ({ s, e }) => {
+    await track(db, "submission_created", e.id, actor.id, { version: s.version });
+    if (e.mentorId) await notify(db, { userId: e.mentorId, kind: "review", essential: true, title: "A submission is waiting for your review",
+      body: `Version ${s.version}. The target is feedback within five business days.`, href: `/mentor/review/${s.id}`, key: `submit:${e.id}:${s.id}` });
     return s.id;
   });
 }

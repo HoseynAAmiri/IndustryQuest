@@ -293,3 +293,49 @@ export const credentials = pgTable("credentials", {
   idempotencyKey: text("idempotency_key").notNull().unique(),
   issuedAt: created(),
 });
+
+// ── Notifications, analytics and audit (NTF, ANL-01, OPS-07) ──
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull().default(""), // never confidential file contents (NTF-04)
+  href: text("href").notNull(),
+  essential: boolean("essential").notNull().default(false),
+  dedupeKey: text("dedupe_key").notNull().unique(), // NTF-05: the same event never notifies twice
+  readAt: timestamp("read_at", { withTimezone: true }),
+  emailedAt: timestamp("emailed_at", { withTimezone: true }),
+  emailError: text("email_error"), // INT-02: failures stay visible to operations
+  createdAt: created(),
+});
+
+export const notificationPrefs = pgTable("notification_prefs", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  emailOptional: boolean("email_optional").notNull().default(true),
+  quietStart: integer("quiet_start").notNull().default(22), // local hour, 0-23
+  quietEnd: integer("quiet_end").notNull().default(7),
+  timezone: text("timezone").notNull().default("UTC"),
+});
+
+// Opaque ids and non-sensitive properties only; no message text, file contents or case narratives (§19.1).
+export const events = pgTable("events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  subjectId: text("subject_id"),
+  actorId: text("actor_id"),
+  props: jsonb("props").$type<Record<string, string | number | boolean | null>>().notNull().default({}),
+  createdAt: created(),
+});
+
+export const auditEvents = pgTable("audit_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actorId: text("actor_id").references(() => user.id),
+  action: text("action").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  reason: text("reason"),
+  meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: created(),
+});

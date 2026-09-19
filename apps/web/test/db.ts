@@ -7,7 +7,7 @@ import { connect, memberships, organizations, skills, studentProfiles, user } fr
 export const db = connect(process.env.DATABASE_URL!);
 
 beforeEach(async () => {
-  await db.execute(sql`truncate table "user", organizations, skills restart identity cascade`);
+  await db.execute(sql`truncate table "user", organizations, skills, events restart identity cascade`);
 });
 afterAll(() => db.pool.end());
 

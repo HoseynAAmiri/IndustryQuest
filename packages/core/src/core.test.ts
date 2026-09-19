@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import {
-  canPublish, checkEligibility, evaluate, explainFit, levelFromXp, nextEnrollment, nextListing, progress,
+  canPublish, checkEligibility, evaluate, explainFit, inQuietHours, shouldEmail, levelFromXp, nextEnrollment, nextListing, progress,
   skillScores, tierFor, xpForLevel, type Brief, type Criterion,
 } from "./index.ts";
 
@@ -87,4 +87,16 @@ test("fit explains itself in words and puts ineligible projects last", () => {
   ]);
   const locked = explainFit(student, { ...p, prerequisites: [{ skillId: "sig", minTier: "emerging" as const }] });
   expect(locked).toMatchObject({ eligible: false, score: -1 });
+});
+
+test("quiet hours hold back optional email but never essential ones", () => {
+  const p = { emailOptional: true, quietStart: 22, quietEnd: 7, timezone: "Europe/London" };
+  const lateLondon = new Date("2026-09-18T22:30:00Z"); // 23:30 BST
+  const noonLondon = new Date("2026-09-18T11:00:00Z");
+  expect(shouldEmail(false, p, lateLondon)).toBe(false);
+  expect(shouldEmail(true, p, lateLondon)).toBe(true);
+  expect(shouldEmail(false, p, noonLondon)).toBe(true);
+  expect(shouldEmail(false, { ...p, emailOptional: false }, noonLondon)).toBe(false);
+  expect(inQuietHours(12, 9, 17)).toBe(true);
+  expect(inQuietHours(8, 9, 17)).toBe(false);
 });

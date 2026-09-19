@@ -9,7 +9,7 @@ import {
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed a production database.");
 const db = connect(process.env.DATABASE_URL!);
-await db.execute(sql`truncate table "user", organizations, skills restart identity cascade`);
+await db.execute(sql`truncate table "user", organizations, skills, events restart identity cascade`);
 
 // ── Skills ──
 await db.insert(skills).values([

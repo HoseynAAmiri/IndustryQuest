@@ -4,14 +4,19 @@ import { briefVersions, enrollments, milestones, projects, studentProfiles, type
 import { assertOrgRole, type Actor } from "./authz";
 import { seatsTaken, studentTiers } from "./discovery";
 import { Forbidden, UserError } from "./errors";
+import { notify, notifyAll, ownersOf, track } from "./notify";
 
 const OFFER_DAYS = 5;
 const ACTIVE_LIMIT = 2; // ENR-07: concurrent projects per student
 
 // Offers expire by time, not by a job: flip any stale ones before reading (PRD §13.2, AC-04).
 export async function expireStaleOffers(db: Db) {
-  await db.update(enrollments).set({ state: "offer_expired", updatedAt: new Date() })
-    .where(and(eq(enrollments.state, "offered"), lt(enrollments.offerExpiresAt, sql`now()`)));
+  const expired = await db.update(enrollments).set({ state: "offer_expired", updatedAt: new Date() })
+    .where(and(eq(enrollments.state, "offered"), lt(enrollments.offerExpiresAt, sql`now()`))).returning();
+  for (const e of expired) {
+    await track(db, "offer_expired", e.id, null);
+    await notify(db, { userId: e.studentId, kind: "offer", title: "An offer expired", body: "The place went back to the company. You can apply to other projects.", href: "/quests", key: `offer-expired:${e.id}` });
+  }
 }
 
 async function load(db: Db, enrollmentId: string) {
@@ -39,6 +44,11 @@ export async function apply(db: Db, actor: Actor, input: { projectId: string; mo
     availability: input.availability.trim().slice(0, 500),
   }).onConflictDoNothing().returning();
   if (!e) throw new UserError("You already have an open application for this project.");
+  await track(db, "application_submitted", e.id, actor.id, { tier: row.v.tier });
+  await notifyAll(db, await ownersOf(db, row.p.orgId), {
+    kind: "application", title: `New application: ${row.v.title}`, body: "A student applied. Review it against your published criteria.",
+    href: `/company/projects/${row.p.id}#applicants`, key: `apply:${e.id}`,
+  });
   return e.id;
 }
 
@@ -46,6 +56,7 @@ export async function withdraw(db: Db, actor: Actor, enrollmentId: string) {
   const { e } = await load(db, enrollmentId);
   if (e.studentId !== actor.id) throw new Forbidden();
   await db.update(enrollments).set({ state: nextEnrollment(e.state, "withdraw"), updatedAt: new Date() }).where(eq(enrollments.id, e.id));
+  await track(db, "enrollment_withdrawn", e.id, actor.id, { from: e.state });
 }
 
 export async function reject(db: Db, actor: Actor, input: { enrollmentId: string; note: string }) {
@@ -53,6 +64,9 @@ export async function reject(db: Db, actor: Actor, input: { enrollmentId: string
   await assertOrgRole(db, actor, p.orgId, "owner");
   await db.update(enrollments).set({ state: nextEnrollment(e.state, "reject"), decisionNote: input.note.trim() || null, updatedAt: new Date() })
     .where(eq(enrollments.id, e.id));
+  await track(db, "application_declined", e.id, actor.id);
+  await notify(db, { userId: e.studentId, kind: "decision", essential: true, title: "Decision on your application",
+    body: `${input.note.trim() || "The company chose other applicants this time."} Nothing negative goes on your profile.`, href: "/quests", key: `reject:${e.id}` });
 }
 
 // AC-03: lock the project row so concurrent offers queue up; at most one can take the last place.
@@ -71,12 +85,15 @@ export async function makeOffer(db: Db, actor: Actor, input: { enrollmentId: str
       offerExpiresAt: new Date(Date.now() + (input.days ?? OFFER_DAYS) * 864e5),
     }).where(eq(enrollments.id, e.id));
   });
+  await track(db, "offer_created", e.id, actor.id, { days: input.days ?? OFFER_DAYS });
+  await notify(db, { userId: e.studentId, kind: "offer", essential: true, title: `You have an offer: ${v.title}`,
+    body: `Reply within ${input.days ?? OFFER_DAYS} days. After that the place goes back to the company.`, href: "/quests", key: `offer:${e.id}` });
 }
 
 // AC-05: accepting binds the student to the exact brief version, rubric, reward rule and mentor
 // already stored on the enrollment. Milestone dates start now.
 export async function respondToOffer(db: Db, actor: Actor, input: { enrollmentId: string; accept: boolean; agreed?: boolean }) {
-  const { e, v } = await load(db, input.enrollmentId);
+  const { e, p, v } = await load(db, input.enrollmentId);
   if (e.studentId !== actor.id) throw new Forbidden();
   if (e.state === "offered" && e.offerExpiresAt! < new Date()) {
     await db.update(enrollments).set({ state: nextEnrollment(e.state, "expireOffer"), updatedAt: new Date() }).where(eq(enrollments.id, e.id));
@@ -84,6 +101,8 @@ export async function respondToOffer(db: Db, actor: Actor, input: { enrollmentId
   }
   if (!input.accept) {
     await db.update(enrollments).set({ state: nextEnrollment(e.state, "declineOffer"), updatedAt: new Date() }).where(eq(enrollments.id, e.id));
+    await track(db, "offer_declined", e.id, actor.id);
+    await notifyAll(db, await ownersOf(db, p.orgId), { kind: "offer", title: `Offer declined: ${v.title}`, body: "The place is free to offer again.", href: `/company/projects/${p.id}#applicants`, key: `decline:${e.id}` });
     return;
   }
   if (!input.agreed) throw new UserError("Confirm that you've read the brief, rubric and terms.");
@@ -99,5 +118,10 @@ export async function respondToOffer(db: Db, actor: Actor, input: { enrollmentId
       await tx.insert(milestones).values(v.content.milestones.map((m) => ({
         enrollmentId: e.id, title: m.title, dueAt: new Date(now.getTime() + m.dueInDays * 864e5),
       })));
+  });
+  await track(db, "offer_accepted", e.id, actor.id, { briefVersion: v.version });
+  await notifyAll(db, [...await ownersOf(db, p.orgId), ...(v.mentorId ? [v.mentorId] : [])], {
+    kind: "enrollment", essential: true, title: `Enrollment confirmed: ${v.title}`,
+    body: "The student accepted the offer and the agreed brief version. Milestone dates start today.", href: `/workspace/${e.id}`, key: `accept:${e.id}`,
   });
 }

@@ -34,6 +34,9 @@ async function back(e: string, days: number) {
   for (const t of ["messages", "files", "submissions", "xp_transactions", "skill_evidence", "credentials"])
     await db.execute(sql`update ${sql.identifier(t)} set created_at = created_at - ${i} where enrollment_id = ${e}`);
   await db.execute(sql`update assessments set created_at = created_at - ${i} where submission_id in (select id from submissions where enrollment_id = ${e})`);
+  await db.execute(sql`update notifications set created_at = created_at - ${i} where dedupe_key like ${`%${e}%`}`);
+  await db.execute(sql`update events set created_at = created_at - ${i} where subject_id = ${e}`);
+  await db.execute(sql`update audit_events set created_at = created_at - ${i} where target_id = ${e} or target_id in (select id::text from submissions where enrollment_id = ${e})`);
 }
 
 const scores = (...s: (number | null)[]): Score[] => s.map((score, n) => ({ criterionId: `c${n + 1}`, score, ...(score === null && { naReason: "Not part of this task" }) }));
@@ -172,6 +175,9 @@ await db.insert(savedProjects).values([{ userId: ada.id, projectId: P.forecast }
   await back(e, 6); // Closed, not completed
 }
 await expireStaleOffers(db);
+
+// Anything older than three days has been seen already.
+await db.execute(sql`update notifications set read_at = created_at + interval '1 hour' where created_at < now() - interval '3 days'`);
 
 const counts = await db.execute<{ state: string; n: number }>(sql`select state, count(*)::int as n from enrollments group by state order by state`);
 console.log("Demo stories:", counts.rows.map((r) => `${r.state} ${r.n}`).join(", "));

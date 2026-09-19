@@ -3,6 +3,7 @@ import { TIER_XP, canPublish, nextListing, type Brief } from "@iq/core";
 import { briefVersions, memberships, organizations, projects, type Db } from "@iq/db";
 import { assertOrgRole, assertStaff, type Actor } from "./authz";
 import { Forbidden, UserError } from "./errors";
+import { audit, notify, notifyAll, ownersOf, staffIds } from "./notify";
 
 export async function loadProject(db: Db, projectId: string) {
   const [row] = await db
@@ -55,6 +56,7 @@ export async function submitForReview(db: Db, actor: Actor, projectId: string) {
   const errors = canPublish(brief.content, { verified: !!org.verifiedAt });
   if (errors.length) throw new UserError(`Fix these before submitting: ${errors.join(" ")}`);
   await db.update(projects).set({ state: nextListing(project.state, "submitForReview"), updatedAt: new Date() }).where(eq(projects.id, projectId));
+  await notifyAll(db, await staffIds(db), { kind: "staff", title: `Brief to review: ${brief.title}`, href: `/staff/projects/${projectId}`, key: `brief-review:${brief.id}:${Date.now()}` });
 }
 
 // PRD §9.2: staff are the publication quality gate. The automatic checks run again at approval.
@@ -67,9 +69,16 @@ export async function reviewProject(db: Db, actor: Actor, input: { projectId: st
   } else if (!input.note.trim()) throw new UserError("Say what needs to change so the owner can fix it.");
   const state = nextListing(project.state, input.approve ? "approve" : "requestChanges");
   await db.update(projects).set({ state, reviewNote: input.note.trim() || null, updatedAt: new Date() }).where(eq(projects.id, project.id));
+  await audit(db, actor.id, input.approve ? "brief_approved" : "brief_changes_requested", "project", project.id, input.note.trim() || undefined);
+  await notifyAll(db, await ownersOf(db, project.orgId), {
+    kind: "brief", essential: true, title: input.approve ? `Published: ${brief.title}` : `Changes requested: ${brief.title}`,
+    body: input.note.trim(), href: `/company/projects/${project.id}`, key: `brief-decision:${project.id}:${Date.now()}`,
+  });
 }
 
 export async function verifyOrg(db: Db, actor: Actor, orgId: string) {
   await assertStaff(db, actor);
   await db.update(organizations).set({ verifiedAt: new Date(), verifiedBy: actor.id }).where(eq(organizations.id, orgId));
+  await audit(db, actor.id, "organization_verified", "organization", orgId);
+  await notifyAll(db, await ownersOf(db, orgId), { kind: "org", essential: true, title: "Your organization is verified", body: "You can now submit briefs for review.", href: "/company", key: `org-verified:${orgId}` });
 }

@@ -3,6 +3,7 @@ import { evaluate, nextEnrollment, type Score } from "@iq/core";
 import { assessments, briefVersions, enrollments, submissions, type Db } from "@iq/db";
 import type { Actor } from "./authz";
 import { Forbidden, UserError } from "./errors";
+import { audit, notify, track } from "./notify";
 import { issueRewards } from "./rewards";
 
 export type Decision = "accept" | "revise" | "not_complete";
@@ -41,6 +42,11 @@ export async function assess(db: Db, actor: Actor, input: {
       ...(input.decision === "accept" && { completedAt: now, rewardsStatus: "pending" as const }),
     }).where(eq(enrollments.id, row.e.id));
   });
+  await track(db, "review_decision", row.e.id, actor.id, { decision: input.decision, version: row.s.version });
+  await audit(db, actor.id, `assessment_${input.decision}`, "submission", row.s.id);
+  const title = { accept: "Your work was accepted", revise: "Your mentor asked for a revision", not_complete: "Your project was closed as not completed" }[input.decision];
+  await notify(db, { userId: row.e.studentId, kind: "review", essential: true, title, body: input.decision === "not_complete" ? "You can appeal from the project workspace." : "",
+    href: `/workspace/${row.e.id}?tab=submissions`, key: `assess:${row.e.id}:${row.s.id}` });
   // Separate from the acceptance on purpose (§13.3): a failure here leaves the work accepted and
   // rewards "pending", which the student's next page view retries.
   if (input.decision === "accept") await issueRewards(db, row.e.id).catch((err) => console.error("issueRewards failed", row.e.id, err));

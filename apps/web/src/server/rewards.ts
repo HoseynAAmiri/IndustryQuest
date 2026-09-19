@@ -3,18 +3,19 @@ import { skillScores, tierFor } from "@iq/core";
 import {
   assessments, briefVersions, credentials, enrollments, projects, skillEvidence, skills, submissions, xpTransactions, type Db,
 } from "@iq/db";
+import { audit, notify, track } from "./notify";
 
 const TITLE = { emerging: "Emerging", bronze: "Bronze" } as const;
 
 // PRD §10.2, §13.3, AC-10/11/17. Every row has a unique idempotency key, so running this twice
 // (a retry, a double click, a crash halfway) never issues anything twice.
 export async function issueRewards(db: Db, enrollmentId: string) {
-  await db.transaction(async (tx) => {
+  const issued = await db.transaction(async (tx) => {
     const [row] = await tx.select({ e: enrollments, v: briefVersions, orgId: projects.orgId }).from(enrollments)
       .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId))
       .innerJoin(projects, eq(projects.id, enrollments.projectId))
       .where(eq(enrollments.id, enrollmentId)).for("update");
-    if (!row || row.e.state !== "completed" || row.e.rewardsStatus === "issued") return;
+    if (!row || row.e.state !== "completed" || row.e.rewardsStatus === "issued") return null;
     const { e, v } = row;
     const [a] = await tx.select({ a: assessments }).from(assessments)
       .innerJoin(submissions, eq(submissions.id, assessments.submissionId))
@@ -60,7 +61,12 @@ export async function issueRewards(db: Db, enrollmentId: string) {
       }
     }
     await tx.update(enrollments).set({ rewardsStatus: "issued" }).where(eq(enrollments.id, e.id));
+    await track(tx, "credential_issued", e.id, null, { xp: v.xp, skills: skillIds.length });
+    await audit(tx, null, "credentials_issued", "enrollment", e.id);
+    return { studentId: e.studentId, xp: v.xp };
   });
+  if (issued) await notify(db, { userId: issued.studentId, kind: "credential", essential: true, title: `You earned ${issued.xp} XP and a verified record`,
+    href: "/profile?tab=credentials", key: `rewards:${enrollmentId}` });
 }
 
 // ponytail: retry-on-read; add a Cloudflare Cron Trigger or Queue if pending rows pile up.

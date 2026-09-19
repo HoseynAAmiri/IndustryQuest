@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { count, eq, isNull } from "drizzle-orm";
-import { organizations, projects } from "@iq/db";
+import { and, count, eq, isNull } from "drizzle-orm";
+import Link from "next/link";
+import { Bell } from "lucide-react";
+import { notifications, organizations, projects } from "@iq/db";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +37,7 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
     groups.push({ label: "Operations", items: [{ href: "/staff", label: "Staff queue", icon: "staff", badge: briefs.n + orgs.n }] });
   }
   const open = (await cookies()).get("sidebar_state")?.value !== "false";
+  const [{ n: unread }] = await db.select({ n: count() }).from(notifications).where(and(eq(notifications.userId, user.id), isNull(notifications.readAt)));
   return (
     <TooltipProvider delayDuration={0}>
     <SidebarProvider defaultOpen={open}>
@@ -43,7 +47,19 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-5" />
           {isDemo() && <DemoBadge />}
-          <div className="ml-auto"><ThemeToggle /></div>
+          <div className="ml-auto flex items-center gap-1">
+            <Button asChild variant="ghost" size="icon" className="relative" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}>
+              <Link href="/notifications">
+                <Bell />
+                {unread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground motion-safe:animate-in motion-safe:zoom-in-50">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </Link>
+            </Button>
+            <ThemeToggle />
+          </div>
         </header>
         {children}
       </SidebarInset>

@@ -3,6 +3,7 @@
 export async function sendEmail(to: string, subject: string, text: string) {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
+    if (process.env.NODE_ENV === "test") return;
     console.log(`\n[email] to: ${to}\n[email] subject: ${subject}\n${text}\n`);
     return;
   }
