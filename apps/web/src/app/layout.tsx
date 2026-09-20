@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
-import { PublicHeader } from "@/components/public-header";
+import { PublicFooter, PublicHeader } from "@/components/public-header";
 import { Suspense } from "react";
 import { Flash } from "@/components/flash";
 import { ThemeProvider } from "@/components/theme";
@@ -25,10 +25,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {session ? (
             <AppShell user={session.user}>{children}</AppShell>
           ) : (
-            <>
+            <div className="flex min-h-screen flex-col">
               <PublicHeader />
-              <main id="main">{children}</main>
-            </>
+              <main id="main" className="flex-1">{children}</main>
+              <PublicFooter />
+            </div>
           )}
           <Toaster position="top-center" closeButton />
           <Suspense><Flash /></Suspense>
