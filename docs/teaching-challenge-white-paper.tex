@@ -1,0 +1,271 @@
+% Build: pdflatex teaching-challenge-white-paper.tex  (run twice for references)
+% Replace the author line before submitting.
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[left=0.85in,right=0.85in,top=0.7in,bottom=0.7in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\titlespacing*{\section}{0pt}{1.1ex plus 0.3ex}{0.5ex}
+\titlespacing*{\subsection}{0pt}{0.9ex plus 0.2ex}{0.4ex}
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\normalsize\bfseries}
+\setlist[itemize]{topsep=0.3ex,itemsep=0.2ex,parsep=0pt,leftmargin=1.4em}
+\setlength{\parskip}{0.4ex}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\textfloatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{2pt}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\title{\vspace{-3.5ex}\textbf{Industry experience infusion in graduate education:\\ why, how, when, and where}}
+\author{\normalsize Group N: Member One, Member Two, Member Three\\[-0.4ex]
+        \small George W. Woodruff School of Mechanical Engineering, Georgia Institute of Technology}
+\date{\vspace{-1.5ex}\small\today}
+
+\begin{document}
+\maketitle
+\vspace{-3ex}
+
+\noindent\textit{Graduate engineering programs certify what students know and, for doctoral students,
+that they can produce new knowledge. Neither credential says much about whether a graduate can take an
+underspecified problem from a paying stakeholder and return a defensible answer on a deadline. We argue
+the fix is not another semester-long course but a supply of short, mentor-reviewed industry projects
+whose assessment produces reusable evidence, and we give an implementation strategy, an MS versus PhD
+comparison, a Woodruff School adoption path, and a working case study.}
+
+\section{Why: the gap a graduate curriculum leaves open}
+
+Professional judgment is learned by doing bounded real work under someone who already has it, then
+being told precisely where the work fell short. Graduate coursework rarely supplies that loop.
+Problems arrive pre-scoped, the stakeholder is the instructor, and the feedback arrives once, as a
+grade, after the work can no longer be revised. Experiential and situated accounts of learning predict
+the outcome directly. A cycle that never closes through action and reflection, inside the community
+that uses the skill, transfers poorly~\cite{kolb1984,lave1991,collins1989}.
+
+The National Academies' review of graduate STEM education makes the same point, recommending that
+programs take explicit responsibility for professional competencies instead of treating them as a
+byproduct of research~\cite{nas2018}. Most engineering PhD graduates work outside the professoriate, so
+preparation for an academic career is the minority case being optimized. For MS students the gap is
+sharper still, since many enter a terminal degree specifically to change what they can be hired to do,
+with three or four semesters to do it.
+
+\section{How, part one: what is already being tried}
+
+Industry-focused graduate learning is not a new idea, and the existing forms fail in instructive ways.
+Table~\ref{tab:approaches} summarizes what is in use.
+
+\begin{table}[ht]
+\centering\scriptsize
+\caption{Current approaches to industry-focused learning in graduate education.}
+\label{tab:approaches}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.27\textwidth} Y Y@{}}
+\toprule
+\textbf{Approach} & \textbf{Pedagogical strength} & \textbf{Why it resists scale} \\
+\midrule
+Industry-sponsored capstone or practicum
+ & Authentic task, real client, team coordination~\cite{crawley2014}
+ & One sponsor per team per term; faculty effort scales with enrollment \\
+Co-op and internship
+ & Full immersion in a community of practice
+ & Calendar-sized; competitive; learning rarely assessed \\
+Industrial doctorate or sponsored fellowship (EngD, Mitacs, NSF INTERN)
+ & Long horizon, genuine co-supervision
+ & Negotiated one student at a time; IP terms take months \\
+Professional MS practicum
+ & Aligned with a terminal degree's purpose
+ & Exists only where a program was built around it \\
+Case-based or guest-lecture seminar
+ & Cheap, scales to any enrollment
+ & Students analyze work instead of doing it; no stakeholder \\
+Consulting-style clinic
+ & Repeat clients, cumulative reputation
+ & Needs dedicated staff and a standing client pipeline \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+One pattern runs through all of it. Every approach with strong pedagogy is priced per student and
+negotiated by a human, and every approach that scales cheaply has removed the stakeholder. The binding
+constraint is not student interest or company goodwill. It is the coordination cost of matching,
+supervising, and assessing one student against one real problem.
+
+\section{How, part two: our proposal}
+
+Unbundle ``industry experience'' from the semester. Instead of one large engagement per student per
+term, build a supply of small projects, each with a published scope, a named industry mentor, a
+scoring rubric tied to named skills, and an effort band between roughly 2 and 15 hours. Students
+complete several over a degree. Assessment of each one produces a durable record of which skills were
+demonstrated, on whose authority, against which criteria.
+
+This is cognitive apprenticeship with the scaffolding made explicit and the assessment made
+reusable~\cite{collins1989,wood1976}. The rubric is what makes it work at scale rather than the
+software. Publishing criteria before the work starts is constructive alignment in its plainest
+form~\cite{biggs1996}, it makes mentor feedback specific enough to act on, and it gives the program
+something defensible to report~\cite{gulikers2004,jonsson2007}.
+
+Five design commitments do most of the pedagogical work, and each one exists to block a specific
+failure we expect:
+
+\begin{itemize}
+  \item \textbf{Evidence, not hours.} Credit attaches to a rubric score from a named assessor, never to
+        logged time, which would reward slow work and unreliable self-reports.
+  \item \textbf{One revision round is in scope by default.} Feedback a student cannot act on is a grade
+        wearing a costume. Revision is where the learning happens~\cite{ericsson1993}.
+  \item \textbf{Progression signals never gate access.} Points and levels may motivate, but only skill
+        evidence and stated prerequisites decide what a student attempts next. Otherwise the credential
+        becomes a measure of platform activity.
+  \item \textbf{Two independent assessors for a durable claim.} One favorable review is provisional;
+        confirmation needs a second project and a second assessor. This limits lenient mentors and
+        lucky matches alike.
+  \item \textbf{A named mentor and a named escalation owner on every engagement.} Projects stall for
+        ordinary reasons, and deciding in advance who rescopes or reassigns keeps a stall from becoming
+        the student's fault.
+\end{itemize}
+
+\subsection{Implementation strategy in a large program}
+
+A large program cannot negotiate each placement, so five steps that currently consume faculty time have
+to become routine operations. A coordinator recruits briefs and rejects any that lack a deliverable, a
+rubric, and a named mentor with confirmed capacity. Students see why they are eligible and what
+evidence a project would produce, so self-selection replaces assignment. Mentors score the published
+rubric, with actionable feedback within five business days tracked as a program metric rather than a
+hope. A standing recovery process extends, rescopes, reassigns, or closes an engagement without
+penalizing the student. Recognition starts as a transcript notation or badge and converts to credit
+only after a term of data exists, because asking a curriculum committee to approve credit for an
+unproven mechanism is how good pilots die.
+
+The honest cost is that coordinator. This model moves effort off faculty and onto operations, and a
+program unwilling to fund roughly half a staff position should not start.
+
+\section{When and where: MS versus PhD}
+
+The mechanism is the same for both degrees; the reason for using it is not. Table~\ref{tab:msphd}
+compares them.
+
+\begin{table}[ht]
+\centering\scriptsize
+\caption{Utility of short mentor-reviewed industry projects by degree objective.}
+\label{tab:msphd}
+\begin{tabularx}{\textwidth}{@{}l Y Y@{}}
+\toprule
+ & \textbf{MS (coursework or terminal)} & \textbf{PhD} \\
+\midrule
+Degree objective
+ & Advanced applied competence, then employment
+ & Independent original research and a defended contribution \\
+What the projects add
+ & The core professional outcome the degree promises but rarely assesses
+ & Breadth, stakeholder translation, and a credible non-academic option \\
+Best timing
+ & Term one onward; deliberately before the job search
+ & After the qualifying exam and proposal, when the research plan can absorb interruption \\
+Fit with existing structure
+ & High; fills unstructured elective and professional-development space
+ & Low; competes directly with advisor-funded research time \\
+Effort band that works
+ & Several small projects, stacking evidence across skills
+ & Fewer, larger, deliberately adjacent to the dissertation topic \\
+Main risk
+ & Becomes r\'{e}sum\'{e} decoration if rubrics are weak
+ & Advisor reads it as lost research months \\
+What makes it viable
+ & Program-level endorsement and visible employer demand
+ & Advisor consent by default, and topics that feed the dissertation \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+We think the MS case is strong enough to act on now and the PhD case needs a different instrument.
+For doctoral students, short projects are a poor substitute for the multi-month industrial placements
+that funders already support, such as the NSF INTERN supplement. Their real value is earlier and
+smaller: a Q1-sized project during the coursework year, before a student has committed to a narrow
+research identity, is cheap enough that an advisor can say yes.
+
+\section{Where: adoption in the Woodruff School}
+
+The school's three program families do not face the same constraints, so a single rollout would stall
+on the hardest one.
+
+\begin{itemize}
+  \item \textbf{ME} is the right starting point. Large MS enrollment, broad partner demand, and topics
+        such as vibration analysis, thermal modeling, tolerance studies, or test-data reduction that are
+        useful to a company and safe to hand to a student remotely.
+  \item \textbf{NRE} needs a longer lead time. Export-control review under ITAR and EAR plus facility
+        badging mean a brief cannot be approved in a week. Start with non-controlled work such as
+        open-data analysis and code verification, and route controlled topics through existing
+        sponsored-research agreements.
+  \item \textbf{MP} must not collide with clinical training. CAMPEP accreditation and the residency
+        pipeline already claim the practical hours, and patient data is bounded by HIPAA, so the opening
+        is vendor-side and physics-support work rather than anything clinical.
+\end{itemize}
+
+We propose three phases. \textbf{Phase 0}, one term: an 8 to 10 week ME-only pilot with roughly 30 to
+50 students, 5 to 8 companies, 8 to 12 mentors, and 12 to 20 briefs offering 40 to 60 actual places.
+\textbf{Phase 1}, the next year: add NRE with export-control screening inside brief approval, and open
+a doctoral track requiring advisor consent. \textbf{Phase 2}: add MP vendor projects and seek a
+transcript notation or one-credit professional-practice course.
+
+Phase 0 succeeds if at least 75\% of accepted engagements reach a reviewed completion, 90\% of
+submissions get actionable feedback within five business days, and half the companies commit a second
+brief. Those numbers test what actually breaks, which is student follow-through, mentor capacity, and
+employer willingness to repeat.
+
+\section{Case study: IndustryQuest}
+
+To test feasibility rather than argue it, we built the operational layer as a working web application.
+The system refuses a brief unless every target skill has a matching rubric criterion and at least one
+criterion is marked as required to pass. Coordinators approve briefs, assign mentors, and own
+escalation.
+
+A representative engagement: a student completes a 2 to 6 hour vibration-analysis project for a pump
+manufacturer. The mentor reviews the submission against the published rubric, requests one revision,
+then scores the signal-analysis criterion 3 out of 4. The system records 120 points, a verified
+completion, and \textit{Emerging} evidence in signal analysis. The account stays at level~1, because
+levels track participation and are irrelevant to eligibility by design. That skill claim reaches
+\textit{Bronze} only after a second project reviewed by a different assessor, so a student with more
+points but one assessor is still not eligible for the harder project, and the interface says exactly
+that instead of showing a match percentage.
+
+The contribution is narrow and worth stating plainly. Brief approval, rubric-bound assessment, evidence
+accumulation, and escalation can be run by one coordinator rather than one faculty member per team. It
+does not show the learning outcomes are better. Only Phase 0 tests that.
+
+\section{Pros, cons, and what would change our minds}
+
+In favor: the model attacks coordination cost instead of adding a course, it produces assessment
+evidence a program can report and an employer can check, and it degrades gracefully, since a student
+who finishes one project has still done real reviewed work.
+
+Against, and we take these seriously. Short projects cannot teach what a six-month immersion teaches,
+and long ambiguity is missing by construction. Mentor capacity, not student demand, breaks first. A weak
+rubric produces a confident and meaningless credential. Doctoral adoption needs advisor consent that
+many advisors will reasonably withhold.
+
+We would abandon the model if Phase 0 showed mentors unable to hold a five-day feedback turnaround at
+even 40 to 60 places, or if two assessors scoring the same rubric criterion agreed no better than
+chance. Both are measurable in one term, which is the point of starting small.
+
+\begin{multicols}{2}\scriptsize
+\begin{thebibliography}{99}
+\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}
+\bibitem{lave1991} J.~Lave and E.~Wenger, \textit{Situated Learning: Legitimate Peripheral Participation}. Cambridge University Press, 1991.
+\bibitem{collins1989} A.~Collins, J.~S. Brown, and S.~E. Newman, ``Cognitive apprenticeship: Teaching the crafts of reading, writing, and mathematics,'' in \textit{Knowing, Learning, and Instruction}, L.~B. Resnick, Ed. Erlbaum, 1989, pp.~453--494.
+\bibitem{nas2018} National Academies of Sciences, Engineering, and Medicine, \textit{Graduate STEM Education for the 21st Century}. National Academies Press, 2018.
+\bibitem{crawley2014} E.~F. Crawley, J.~Malmqvist, S.~\"{O}stlund, D.~R. Brodeur, and K.~Edstr\"{o}m, \textit{Rethinking Engineering Education: The CDIO Approach}, 2nd ed. Springer, 2014.
+\bibitem{wood1976} D.~Wood, J.~S. Bruner, and G.~Ross, ``The role of tutoring in problem solving,'' \textit{Journal of Child Psychology and Psychiatry}, vol.~17, no.~2, pp.~89--100, 1976.
+\bibitem{biggs1996} J.~Biggs, ``Enhancing teaching through constructive alignment,'' \textit{Higher Education}, vol.~32, pp.~347--364, 1996.
+\bibitem{gulikers2004} J.~T.~M. Gulikers, T.~J. Bastiaens, and P.~A. Kirschner, ``A five-dimensional framework for authentic assessment,'' \textit{Educational Technology Research and Development}, vol.~52, no.~3, pp.~67--86, 2004.
+\bibitem{jonsson2007} A.~Jonsson and G.~Svingby, ``The use of scoring rubrics: Reliability, validity and educational consequences,'' \textit{Educational Research Review}, vol.~2, no.~2, pp.~130--144, 2007.
+\bibitem{ericsson1993} K.~A. Ericsson, R.~T. Krampe, and C.~Tesch-R\"{o}mer, ``The role of deliberate practice in the acquisition of expert performance,'' \textit{Psychological Review}, vol.~100, no.~3, pp.~363--406, 1993.
+\bibitem{kolb1984} D.~A. Kolb, \textit{Experiential Learning}. Prentice Hall, 1984.
+\end{thebibliography}
+\end{multicols}
+
+\end{document}

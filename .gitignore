@@ -8,3 +8,6 @@ node_modules
 .dev.vars
 *.tsbuildinfo
 next-env.d.ts
+docs/*.aux
+docs/*.log
+docs/*.out
