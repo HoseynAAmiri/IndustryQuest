@@ -6,11 +6,23 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "industryquest" }],
-  // Replace id with the output of `wrangler hyperdrive create` before deploying.
+  "routes": [
+    { "pattern": "industryquest.org", "custom_domain": true },
+    { "pattern": "www.industryquest.org", "custom_domain": true }
+  ],
+  // BETTER_AUTH_SECRET is a secret, set with `wrangler secret put`, never here.
+  // DEMO_MODE=1 is deliberate on this deployment: the data is fictional and one-click persona
+  // sign-in is the whole point of the demo. Turn it off before any real user data exists.
+  "vars": {
+    "BETTER_AUTH_URL": "https://industryquest.org",
+    "DEMO_MODE": "1",
+    "COORDINATOR_EMAIL": "staff@demo.test"
+  },
+  // id is the `industryquest-neon` config, pointing at the Neon database.
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "00000000000000000000000000000000",
+      "id": "d17fa6ff0eaa4d2a9cf073734e9842cd",
       "localConnectionString": "postgres://postgres:postgres@localhost:5432/industryquest"
     }
   ],
