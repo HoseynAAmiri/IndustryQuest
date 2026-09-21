@@ -1,6 +1,6 @@
 # IndustryQuest
 
-Skills live in `.claude/skills/<name>/SKILL.md`. Codex also discovers them at `.agents/skills` (a symlink to that folder). When a skill applies, open that file and follow it for the rest of the turn. Do not work from the skill name or from memory. Claude invokes with `/name`. Codex invokes with `$name`.
+Skills live in `.claude/skills/<name>/SKILL.md`. Codex also discovers them at `.agents/skills`, a local symlink that git does not track, because Overleaf refuses to clone a repo containing symlinks. Recreate it after a fresh clone with `mkdir -p .agents && ln -sfn ../.claude/skills .agents/skills`. When a skill applies, open that file and follow it for the rest of the turn. Do not work from the skill name or from memory. Claude invokes with `/name`. Codex invokes with `$name`.
 
 ## Always on
 
