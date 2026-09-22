@@ -1,4 +1,5 @@
 import "server-only";
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { TransitionError } from "@iq/core";
 import { UserError } from "./errors";
@@ -16,6 +17,8 @@ const url = (u: Url) => (typeof u === "function" ? u() : u);
 // URLs may be functions so they can use ids created inside fn.
 export async function act<T>(back: Url, fn: () => Promise<T>, done: {
   to?: Url; info?: string; params?: (result: T) => Record<string, string>;
+  // Stay on this page and re-render it. A redirect to the same URL shows the loading skeleton.
+  stay?: boolean;
 } = {}) {
   let result: T;
   try {
@@ -24,6 +27,10 @@ export async function act<T>(back: Url, fn: () => Promise<T>, done: {
     if (e instanceof UserError) redirect(withParam(url(back), "error", e.message));
     if (e instanceof TransitionError) redirect(withParam(url(back), "error", "That action isn't available any more. The page may be out of date."));
     throw e;
+  }
+  if (done.stay) {
+    refresh();
+    return result;
   }
   let to = url(done.to ?? back);
   if (done.info) to = withParam(to, "info", done.info);

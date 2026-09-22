@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
-import { Bookmark, BookmarkCheck, CircleCheck, Compass, Lock } from "lucide-react";
+import { CircleCheck, Compass, Lock } from "lucide-react";
 import { checkEligibility, explainFit } from "@iq/core";
 import { enrollments, savedProjects, studentProfiles, user } from "@iq/db";
-import { toggleSave } from "@/app/explore/actions";
 import { BriefView } from "@/components/brief-view";
+import { SaveProject } from "@/components/save-project";
 import { availability } from "@/components/project-card";
 import { Alert, Button, ENROLLMENT, EnrollmentBadge, Page, TextArea, messages } from "@/components/ui";
 import { openCaseAction } from "@/app/support/actions";
@@ -88,15 +88,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
                 </div>
               )}
               {mine && !live && <p className="text-sm text-muted-foreground">Last application: {ENROLLMENT[mine.state][0].toLowerCase()}. You can apply again.</p>}
-              {profile && (
-                <form action={toggleSave}>
-                  <input type="hidden" name="projectId" value={id} />
-                  <input type="hidden" name="back" value={`/projects/${id}`} />
-                  <Button variant="outline" className="w-full" aria-pressed={!!saved}>
-                    {saved ? <><BookmarkCheck className="text-primary" /> Saved</> : <><Bookmark /> Save for later</>}
-                  </Button>
-                </form>
-              )}
+              {profile && <SaveProject saved={!!saved} projectId={id} back={`/projects/${id}`} />}
             </CardContent>
           </Card>
 

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, CircleCheck, Clock, Lock, Users } from "lucide-react";
+import { CircleCheck, Clock, Lock, Users } from "lucide-react";
 import { checkEligibility, type Brief, type Tier } from "@iq/core";
-import { dismissAction, toggleSave } from "@/app/explore/actions";
+import { dismissAction } from "@/app/explore/actions";
+import { SaveProject } from "@/components/save-project";
 import { COMP } from "@/components/brief-view";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,15 +70,7 @@ export function ProjectCard({ c, names, tiers, back, dismissable }: { c: CardDat
             <Button variant="ghost" size="sm" className="text-muted-foreground">Not for me</Button>
           </form>
         )}
-        {c.fit && (
-          <form action={toggleSave}>
-            <input type="hidden" name="projectId" value={c.id} />
-            <input type="hidden" name="back" value={back} />
-            <Button variant="ghost" size="icon-sm" aria-label={c.saved ? `Unsave ${c.b.title}` : `Save ${c.b.title}`} aria-pressed={c.saved}>
-              {c.saved ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
-            </Button>
-          </form>
-        )}
+        {c.fit && <SaveProject saved={c.saved} projectId={c.id} back={back} title={c.b.title} />}
       </CardFooter>
     </Card>
   );
