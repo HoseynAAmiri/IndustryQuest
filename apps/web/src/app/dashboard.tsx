@@ -14,9 +14,9 @@ import { expireStaleOffers } from "@/server/enrollments";
 
 type Roles = Awaited<ReturnType<typeof getRoles>>;
 
-export function Stat({ label, value, hint, icon: Icon }: { label: string; value: ReactNode; hint?: string; icon: typeof Users }) {
-  return (
-    <Card className="gap-2 py-4">
+export function Stat({ label, value, hint, icon: Icon, href }: { label: string; value: ReactNode; hint?: string; icon: typeof Users; href?: string }) {
+  const card = (
+    <Card className={href ? "lift h-full gap-2 py-4" : "gap-2 py-4"}>
       <CardHeader className="px-4">
         <CardDescription className="flex items-center justify-between">{label}<Icon className="size-4" aria-hidden /></CardDescription>
         <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
@@ -24,6 +24,7 @@ export function Stat({ label, value, hint, icon: Icon }: { label: string; value:
       {hint && <CardContent className="px-4 text-xs text-muted-foreground">{hint}</CardContent>}
     </Card>
   );
+  return href ? <Link href={href} className="rounded-xl focus-visible:outline-2 focus-visible:outline-ring">{card}</Link> : card;
 }
 
 function Section({ title, description, href, cta, children }: { title: string; description?: string; href?: string; cta?: string; children: ReactNode }) {
@@ -84,9 +85,9 @@ export async function StudentDashboard({ db, userId }: { db: Db; userId: string 
             </CardContent>
           </Card>
         </Link>
-        <Stat label="Active quests" value={next.length} icon={Target} hint={offers.length ? `${offers.length} offer waiting` : undefined} />
-        <Stat label="Verified skills" value={verified} icon={BadgeCheck} hint={verified ? Object.entries(tiers).filter(([, t]) => t !== "none").map(([id, t]) => `${names[id]} (${t})`).join(", ") : "Earned from reviewed work"} />
-        <Stat label="Saved projects" value={saved.n} icon={FileText} />
+        <Stat label="Active quests" href="/quests" value={next.length} icon={Target} hint={offers.length ? `${offers.length} offer waiting` : undefined} />
+        <Stat label="Verified skills" href="/profile?tab=skills" value={verified} icon={BadgeCheck} hint={verified ? Object.entries(tiers).filter(([, t]) => t !== "none").map(([id, t]) => `${names[id]} (${t})`).join(", ") : "Earned from reviewed work"} />
+        <Stat label="Saved projects" href="/explore?saved=on" value={saved.n} icon={FileText} />
       </div>
       {next.length > 0 && (
         <Section title="Continue where you left off" href="/quests" cta="My quests">

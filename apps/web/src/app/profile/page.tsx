@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { Award, BadgeCheck, Eye, EyeOff, Medal, Trash2, Trophy } from "lucide-react";
@@ -20,6 +21,7 @@ import { getDb } from "@/server/db";
 import { CLAIM_LEVELS } from "@/server/profile";
 import { issuePendingFor } from "@/server/rewards";
 import { ConfirmForm, ConfirmSubmit } from "@/components/confirm";
+import { Dismissible } from "@/components/dismissible";
 import { changeEmailAction, saveProfileAction, shareAction, skillAction, summaryAction, visibilityAction } from "./actions";
 import { PARTICIPATION } from "@/server/profile";
 import { Input } from "@/components/ui/input";
@@ -44,6 +46,7 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
   const tab = (TABS as readonly string[]).includes(requested) ? requested : "progress";
   await issuePendingFor(db, me.id);
   const tz = profile.timezone;
+  const jar = await cookies();
 
   const timeline = await db.select({ e: enrollments, title: briefVersions.title, org: organizations.name, s: submissions }).from(enrollments)
     .innerJoin(briefVersions, eq(briefVersions.id, enrollments.briefVersionId)).innerJoin(projects, eq(projects.id, enrollments.projectId))
@@ -156,11 +159,14 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
         </TabsContent>
 
         <TabsContent value="skills" className="mt-4 grid gap-4">
-          <p className="max-w-prose text-sm text-muted-foreground">
-            A <strong className="text-foreground">verified</strong> tier comes from mentor-reviewed work: Emerging after one project scored 3 or 4,
-            Bronze after two projects with two reviewers. What you add yourself stays marked <strong className="text-foreground">self-reported</strong>.
-            It helps companies read your application but doesn't unlock projects.
-          </p>
+          {!jar.has("hide_skills_legend") && <Dismissible id="skills_legend">
+            <dl className="grid gap-2 sm:grid-cols-[auto_1fr] sm:items-baseline sm:gap-x-3">
+              <dt><Badge className="gap-1"><BadgeCheck className="size-3" />Verified</Badge></dt>
+              <dd>Earned from mentor-reviewed projects. Emerging needs one project scored 3 or 4. Bronze needs two projects from two different reviewers. Unlocks projects.</dd>
+              <dt><Badge variant="outline">Self-reported</Badge></dt>
+              <dd>Levels you add yourself. Companies see them when you apply, but they don't unlock projects.</dd>
+            </dl>
+          </Dismissible>}
           {rows.map((r) => (
             <Card key={r.id}>
               <CardHeader>
@@ -216,9 +222,9 @@ export default async function Profile({ searchParams }: PageProps<"/profile">) {
         </TabsContent>
 
         <TabsContent value="credentials" className="mt-4 grid gap-3">
-          <p className="max-w-prose text-sm text-muted-foreground">
+          {!jar.has("hide_credentials_note") && <Dismissible id="credentials_note">
             Private until you share. A public link shows the summary, issuer and status, never your files or feedback. Turning it off stops the link at once.
-          </p>
+          </Dismissible>}
           {creds.map((c) => {
             const Icon = KIND[c.kind];
             return (

@@ -57,10 +57,14 @@ pnpm typecheck
 pnpm --filter web preview   # build and run in the local Workers runtime on :3000 (stop `pnpm dev` first)
 ```
 
-Cloudflare bindings are declared in `apps/web/wrangler.jsonc`: `HYPERDRIVE` (Postgres) and `FILES` (R2). Run `pnpm --filter web cf-typegen` after changing that file. Before the first deploy, replace the placeholder Hyperdrive id with the one from `wrangler hyperdrive create`.
+Cloudflare bindings are declared in `apps/web/wrangler.jsonc`: `HYPERDRIVE` (Postgres) and `FILES` (R2). Run `pnpm --filter web cf-typegen` after changing that file. Before the first deploy, replace the placeholder Hyperdrive id with the one from `wrangler hyperdrive create`. Create it with `--caching-disabled true`: the cache serves reads up to 60s old, so a page reloaded after a write shows the old state.
 
 Rules the code follows:
 
 - Every protected read or write checks access on the server in `apps/web/src/server/authz.ts`. Disabled buttons don't count as a check.
 - Domain mutations are plain functions in `apps/web/src/server/*.ts` taking `(db, actor, input)`. Server Actions only wrap them.
 - Anything that awards XP or credentials uses a unique idempotency key, so running it twice is safe.
+
+Browser testing:
+
+- Never close a browser tab you opened for testing. The user closes tabs themselves.

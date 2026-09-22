@@ -13,6 +13,7 @@ import { getDb } from "@/server/db";
 import { openCaseCount } from "@/server/cases";
 import { isDemo } from "@/server/demo";
 import { AppSidebar, type NavGroup } from "./app-sidebar";
+import { LiveRefresh } from "./live-refresh";
 import { DemoBadge } from "./public-header";
 import { ThemeToggle } from "./theme";
 
@@ -52,6 +53,7 @@ export async function AppShell({ user, children }: { user: { id: string; name: s
   return (
     <TooltipProvider delayDuration={0}>
     <SidebarProvider defaultOpen={open}>
+      <LiveRefresh />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-background focus:p-2 focus:shadow">
         Skip to content
       </a>
